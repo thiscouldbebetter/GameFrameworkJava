@@ -1,93 +1,141 @@
+package Controls;
 
-class ControlContainerTransparent
+import java.util.*;
+import Display.*;
+import Geometry.*;
+import Input.*;
+import Model.*;
+
+public class ControlContainerTransparent implements Control
 {
-	constructor(containerInner)
+	private ControlContainer containerInner;
+
+	private List<Control> _childrenContainingPos = new ArrayList<Control>;
+	private Coords _drawPos = new Coords();
+
+	public ControlContainerTransparent(ControlContainer containerInner)
 	{
 		this.containerInner = containerInner;
 	}
 
 	// instance methods
 
-	actionToInputsMappings()
+	public ActionToInputsMapping[] actionToInputsMappings()
 	{
 		return this.containerInner.actionToInputsMappings();
-	};
+	}
 
-	childWithFocus()
+	public Control childWithFocus()
 	{
 		return this.containerInner.childWithFocus();
-	};
+	}
 
-	childWithFocusNextInDirection(direction)
+	public Control childWithFocusNextInDirection(int direction)
 	{
 		return this.containerInner.childWithFocusNextInDirection(direction);
-	};
+	}
 
-	childrenAtPosAddToList
+	public List<Control> childrenAtPosAddToList
 	(
-		posToCheck, listToAddTo, addFirstChildOnly
+		Coords posToCheck, List<Control> listToAddTo, boolean addFirstChildOnly
 	)
 	{
 		return this.containerInner.childrenAtPosAddToList
 		(
 			posToCheck, listToAddTo, addFirstChildOnly
 		);
-	};
+	}
 
-	actionHandle(actionNameToHandle, universe)
+	public boolean actionHandle(String actionNameToHandle, Universe universe)
 	{
 		return this.containerInner.actionHandle(actionNameToHandle, universe);
-	};
+	}
 
-	mouseClick(mouseClickPos)
+	public void childFocus(Control child)
 	{
+		// todo
+	}
+
+	public void focusGain() {}
+	public void focusLose() {}
+
+	public boolean isEnabled()
+	{
+		return true;
+	}
+
+	public boolean mouseClick(Coords mouseClickPos)
+	{
+		this._childrenContainingPos.clear();
 		var childrenContainingPos = this.containerInner.childrenAtPosAddToList
 		(
 			mouseClickPos,
-			this.containerInner.childrenContainingPos.clear(),
+			this._childrenContainingPos,
 			true // addFirstChildOnly
 		);
 
 		var wasClickHandled = false;
-		if (childrenContainingPos.length > 0)
+		if (childrenContainingPos.size() > 0)
 		{
-			var child = childrenContainingPos[0];
-			if (child.mouseClick != null)
+			var child = childrenContainingPos.get(0);
+			var wasClickHandledByChild = child.mouseClick(mouseClickPos);
+			if (wasClickHandledByChild)
 			{
-				var wasClickHandledByChild = child.mouseClick(mouseClickPos);
-				if (wasClickHandledByChild)
-				{
-					wasClickHandled = true;
-				}
+				wasClickHandled = true;
 			}
 		}
 
 		return wasClickHandled;
-	};
+	}
 
-	mouseMove(mouseMovePos)
+	public void mouseEnter() {}
+	public void mouseExit() {}
+
+	public boolean mouseMove(Coords mouseMovePos)
 	{
 		this.containerInner.mouseMove(mouseMovePos);
-	};
+	}
 
-	scalePosAndSize(scaleFactor)
+	private Control _parent;
+
+	public Control parent()
+	{
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Coords pos()
+	{
+		return this.containerInner.pos();
+	}
+
+	public Control scalePosAndSize(Coords scaleFactor)
 	{
 		return this.containerInner.scalePosAndSize(scaleFactor);
-	};
+	}
+
+	public Coords size()
+	{
+		return this.containerInner.size();
+	}
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
 		drawLoc = this.containerInner._drawLoc.overwriteWith(drawLoc);
-		var drawPos = this.containerInner._drawPos.overwriteWith(drawLoc.pos).add
+		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add
 		(
-			this.containerInner.pos
+			this.containerInner.pos()
 		);
 
 		display.drawRectangle
 		(
-			drawPos, this.containerInner.size,
+			drawPos, this.containerInner.size(),
 			null, // display.colorBack,
 			display.colorFore
 		);
@@ -98,5 +146,5 @@ class ControlContainerTransparent
 			var child = children[i];
 			child.draw(universe, display, drawLoc);
 		}
-	};
+	}
 }

@@ -1,107 +1,116 @@
+package Controls;
 
-class ControlTextBox
+import java.util.*;
+import Display.*;
+import Geometry.*;
+import Model.*;
+import Utility.*;
+
+public class ControlTextBox implements Control
 {
-	constructor(name, pos, size, text, fontHeightInPixels, numberOfCharsMax)
+	public String name;
+	public Coords _pos;
+	private Coords _size;
+	public DataBinding _text;
+	public int fontHeightInPixels;
+	public int numberOfCharsMax;
+
+	private Control parent;
+	private boolean isHighlighted;
+	private int cursorPos;
+	private String styleName;
+
+	private Coords _drawPos = new Coords();
+	private Coords _drawPosText = new Coords();
+	private Location _drawLoc = new Location(_drawPos);
+	private Coords _textMargin = new Coords();
+	private Coords _textSize = new Coords();
+
+	public ControlTextBox
+	(
+		String name, Coords pos, Coords size, DataBinding text,
+		int fontHeightInPixels, int numberOfCharsMax
+	)
 	{
 		this.name = name;
-		this.pos = pos;
-		this.size = size;
+		this._pos = pos;
+		this._size = size;
 		this._text = text;
 		this.fontHeightInPixels = fontHeightInPixels;
 		this.numberOfCharsMax = numberOfCharsMax;
 
 		this.isHighlighted = false;
-		this.cursorPos = this.text().length;
-
-		// Helper variables.
-		this._drawPos = new Coords();
-		this._drawPosText = new Coords();
-		this._drawLoc = new Location(this._drawPos);
-		this._textMargin = new Coords();
-		this._textSize = new Coords();
+		this.cursorPos = this.text().length();
 	}
 
-	style(universe)
+	public ControlStyle style(Universe universe)
 	{
-		return universe.controlBuilder.styles[this.styleName == null ? "Default" : this.styleName];
-	};
+		return universe.controlBuilder.stylesByName.get(this.styleName == null ? "Default" : this.styleName);
+	}
 
-	text(value, universe)
+	public String text()
 	{
-		if (value != null)
-		{
-			if (this._text.set == null)
-			{
-				this._text = value;
-			}
-			else
-			{
-				this._text.set(value);
-			}
-		}
+		return (String)(this._text.get());
+	}
 
-		return (this._text.get == null ? this._text : this._text.get(universe) );
-	};
+	public void text(String value)
+	{
+		this._text.set(value);
+	}
 
 	// events
 
-	actionHandle(actionNameToHandle)
+	public boolean actionHandle(String actionNameToHandle, Universe universe)
 	{
 		var text = this.text();
 
-		var controlActionNames = ControlActionNames.Instances();
-		if (actionNameToHandle == controlActionNames.ControlCancel)
+		if (actionNameToHandle == ControlActionNames.ControlCancel)
 		{
-			this.text(text.substr(0, text.length - 1));
+			this.text(text.substring(0, text.length() - 1));
 
-			this.cursorPos =
+			this.cursorPos = NumberHelper.wrapToRangeMinMax
 			(
-				this.cursorPos - 1
-			).wrapToRangeMinMax
-			(
-				0, text.length + 1
+				this.cursorPos - 1, 0, text.length() + 1
 			);
 		}
-		else if (actionNameToHandle == controlActionNames.ControlConfirm)
+		else if (actionNameToHandle == ControlActionNames.ControlConfirm)
 		{
-			this.cursorPos =
-			(
-				this.cursorPos + 1
-			).wrapToRangeMinMax(0, text.length + 1);
+			this.cursorPos = NumberHelper.wrapToRangeMinMax(this.cursorPos + 1, 0, text.length() + 1);
 		}
 		else if
 		(
-			actionNameToHandle == controlActionNames.ControlIncrement
-			|| actionNameToHandle == controlActionNames.ControlDecrement
+			actionNameToHandle == ControlActionNames.ControlIncrement
+			|| actionNameToHandle == ControlActionNames.ControlDecrement
 		)
 		{
 			// This is a bit counterintuitive.
-			var direction = (actionNameToHandle == controlActionNames.ControlIncrement ? -1 : 1);
+			var direction = (actionNameToHandle == ControlActionNames.ControlIncrement ? -1 : 1);
 
 			var charCodeAtCursor =
 			(
-				this.cursorPos < text.length ? text.charCodeAt(this.cursorPos) : "A".charCodeAt(0) - 1
+				this.cursorPos < text.length() ? text.charAt(this.cursorPos) : 'A' - 1
 			);
 
-			charCodeAtCursor =
+			charCodeAtCursor = (char)
 			(
-				charCodeAtCursor + direction
-			).wrapToRangeMinMax
-			(
-				"A".charCodeAt(0),
-				"Z".charCodeAt(0) + 1
+				NumberHelper.wrapToRangeMinMax
+				(
+					charCodeAtCursor + direction,
+					(int)'A',
+					(int)'Z' + 1
+				)
 			);
 
-			var charAtCursor = String.fromCharCode(charCodeAtCursor);
+			var charAtCursor = new String ( new char[] {charCodeAtCursor } );
 
 			this.text
 			(
-				text.substr(0, this.cursorPos)
+				text.substring(0, this.cursorPos)
 				+ charAtCursor
-				+ text.substr(this.cursorPos + 1)
+				+ text.substring(this.cursorPos + 1)
 			);
 		}
-		else if (actionNameToHandle.length == 1 || actionNameToHandle.startsWith("_") ) // printable character
+		else if (actionNameToHandle.length() == 1 || actionNameToHandle.startsWith("_") ) // printable character
 		{
 			if (actionNameToHandle.startsWith("_"))
 			{
@@ -111,61 +120,90 @@ class ControlTextBox
 				}
 				else
 				{
-					actionNameToHandle = actionNameToHandle.substr(1);
+					actionNameToHandle = actionNameToHandle.substring(1);
 				}
 			}
 
-			if (this.numberOfCharsMax == null || text.length < this.numberOfCharsMax)
+			if (this.numberOfCharsMax == 0 || text.length() < this.numberOfCharsMax)
 			{
-				text = this.text
+				this.text
 				(
-					text.substr(0, this.cursorPos)
+					text.substring(0, this.cursorPos)
 					+ actionNameToHandle
-					+ text.substr(this.cursorPos)
+					+ text.substring(this.cursorPos + 1)
 				);
 
-				this.cursorPos =
+				this.cursorPos = NumberHelper.wrapToRangeMinMax
 				(
-					this.cursorPos + 1
-				).wrapToRangeMinMax
-				(
-					0, text.length + 1
+					this.cursorPos + 1, 0, text.length() + 1
 				);
 			}
 		}
 
 		return true; // wasActionHandled
-	};
+	}
 
-	focusGain()
+	public void childFocus(Control child)
+	{
+		// todo
+	}
+
+	public void focusGain()
 	{
 		this.isHighlighted = true;
-	};
+	}
 
-	focusLose()
+	public void focusLose()
 	{
 		this.isHighlighted = false;
-	};
+	}
 
-	mouseClick(mouseClickPos)
+	public boolean isEnabled()
 	{
-		var parent = this.parent;
-		parent.indexOfChildWithFocus = parent.children.indexOf(this);
+		return true; // todo
+	}
+
+	public boolean actionHandle(String actionName)
+	{
+		return true; // todo
+	}
+
+	public boolean mouseClick(Coords mouseClickPos)
+	{
+		var parentAsControl = this.parent();
+		var parent = (ControlContainer)parentAsControl;
+		parent.childFocus(Arrays.asList(parent.children).indexOf(this));
 		this.isHighlighted = true;
-	};
+	}
+
+	public void mouseEnter() {}
+	public void mouseExit() {}
+
+	public boolean mouseMove(Coords mouseMovePos)
+	{}
+
+	public Coords pos()
+	{
+		return this._pos;
+	}
+
+	public Coords size()
+	{
+		return this._size;
+	}
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
-		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos);
+		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos());
 		var style = this.style(universe);
 
 		var text = this.text();
 
 		display.drawRectangle
 		(
-			drawPos, this.size,
+			drawPos, this.size(),
 			style.colorFill, style.colorBorder,
 			this.isHighlighted // areColorsReversed
 		);
@@ -175,7 +213,7 @@ class ControlTextBox
 		var textSize =
 			this._textSize.overwriteWithDimensions(textWidth, this.fontHeightInPixels, 0);
 		var textMargin =
-			this._textMargin.overwriteWith(this.size).subtract(textSize).half();
+			this._textMargin.overwriteWith(this.size()).subtract(textSize).half();
 		var drawPosText =
 			this._drawPosText.overwriteWith(drawPos).add(textMargin);
 
@@ -188,13 +226,13 @@ class ControlTextBox
 			style.colorFill,
 			this.isHighlighted,
 			false, // isCentered
-			this.size.x // widthMaxInPixels
+			this.size().x // widthMaxInPixels
 		);
 
 		if (this.isHighlighted)
 		{
-			var textBeforeCursor = text.substr(0, this.cursorPos);
-			var textAtCursor = text.substr(this.cursorPos, 1);
+			var textBeforeCursor = text.substring(0, this.cursorPos);
+			var textAtCursor = text.substring(this.cursorPos, this.cursorPos + 1);
 			var cursorX = display.textWidthForFontHeight
 			(
 				textBeforeCursor, this.fontHeightInPixels
@@ -222,8 +260,25 @@ class ControlTextBox
 				null, // colorBack
 				false, // isHighlighted
 				false, // isCentered
-				this.size.x // widthMaxInPixels
+				this.size().x // widthMaxInPixels
 			);
 		}
-	};
+	}
+
+	private Control _parent;
+
+	public Control parent()
+	{
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Control scalePosAndSize(Coords scaleFactors)
+	{
+		return this; // todo
+	}
 }

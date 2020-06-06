@@ -1,21 +1,41 @@
+package Display.Visuals;
 
-class VisualOffset
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VisualOffset implements Visual
 {
-	constructor(child, offset)
+	private Visual child;
+	private Coords offset;
+
+	// Helper variables.
+	private Coords _posSaved = new Coords();
+
+	public VisualOffset(Visual child, Coords offset)
 	{
 		this.child = child;
 		this.offset = offset;
-
-		// Helper variables.
-		this._posSaved = new Coords();
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var drawablePos = entity.locatable.loc.pos;
+		var drawablePos = entity.locatable().loc.pos;
 		this._posSaved.overwriteWith(drawablePos);
 		drawablePos.add(this.offset);
 		this.child.draw(universe, world, display, entity);
 		drawablePos.overwriteWith(this._posSaved);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
 }

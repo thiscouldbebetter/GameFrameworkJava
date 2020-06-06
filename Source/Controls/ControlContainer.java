@@ -1,24 +1,75 @@
+package Controls;
 
-class ControlContainer
+import java.util.*;
+import Display.*;
+import Geometry.*;
+import Input.*;
+import Model.*;
+import Utility.*;
+
+public class ControlContainer implements Control
 {
-	constructor(name, pos, size, children, actions, actionToInputsMappings)
+	public String _name;
+	public Coords _pos;
+	public Coords _size;
+	public Control[] children;
+	public Map<String,Control> childrenByName;
+	public Action[] actions;
+	public Map<String,Action> actionsByName;
+	public ActionToInputsMapping[] _actionToInputsMappings;
+
+	public List<Control> childrenContainingPos;
+	public List<Control> childrenContainingPosPrev;
+	private int indexOfChildWithFocus;
+	private String styleName;
+
+	private Coords _childMax;
+	private Coords _drawPos;
+	public Location _drawLoc;
+	private Coords _mouseClickPos;
+	private Coords _mouseMovePos;
+	private Coords _posToCheck;
+
+	public ControlContainer
+	(
+		String name, Coords pos, Coords size, Control[] children
+	)
 	{
-		this.name = name;
-		this.pos = pos;
-		this.size = size;
-		this.children = children.addLookupsByName();
-		this.actions = (actions || []).addLookupsByName();
-		this._actionToInputsMappings = actionToInputsMappings || [];
+		this(name, pos, size, children, new Action[0]);
+	}
+
+	public ControlContainer
+	(
+		String name, Coords pos, Coords size, Control[] children, Action[] actions
+	)
+	{
+		this(name, pos, size, children, actions, new ActionToInputsMapping[0]);
+	}
+
+	public ControlContainer
+	(
+		String name, Coords pos, Coords size, Control[] children,
+		Action[] actions, ActionToInputsMapping[] actionToInputsMappings
+	)
+	{
+		this._name = name;
+		this._pos = pos;
+		this._size = size;
+		this.children = children;
+		this.childrenByName = ArrayHelper.addLookupsByName(children);
+		this.actions = actions;
+		this.actionsByName = ArrayHelper.addLookupsByName(this.actions);
+		this._actionToInputsMappings = actionToInputsMappings;
 
 		for (var i = 0; i < this.children.length; i++)
 		{
 			var child = this.children[i];
-			child.parent = this;
+			child.parent(this);
 		}
 
-		this.indexOfChildWithFocus = null;
-		this.childrenContainingPos = [];
-		this.childrenContainingPosPrev = [];
+		this.indexOfChildWithFocus = -1;
+		this.childrenContainingPos = new ArrayList<Control>();
+		this.childrenContainingPosPrev = new ArrayList<Control>();
 
 		// Helper variables.
 		this._childMax = new Coords();
@@ -31,34 +82,33 @@ class ControlContainer
 
 	// instance methods
 
-	isEnabled()
+	public boolean isEnabled()
 	{
 		return true;
-	};
+	}
 
-	style(universe)
+	public ControlStyle style(Universe universe)
 	{
-		return universe.controlBuilder.styles[this.styleName == null ? "Default" : this.styleName];
-	};
+		return universe.controlBuilder.stylesByName.get(this.styleName == null ? "Default" : this.styleName);
+	}
 
 	// actions
 
-	actionHandle(actionNameToHandle, universe)
+	public boolean actionHandle(String actionNameToHandle, Universe universe)
 	{
 		var wasActionHandled = false;
 
 		var childWithFocus = this.childWithFocus();
 
-		var controlActionNames = ControlActionNames.Instances();
 		if
 		(
-			actionNameToHandle == controlActionNames.ControlPrev
-			|| actionNameToHandle == controlActionNames.ControlNext
+			actionNameToHandle == ControlActionNames.ControlPrev
+			|| actionNameToHandle == ControlActionNames.ControlNext
 		)
 		{
 			wasActionHandled = true;
 
-			var direction = (actionNameToHandle == controlActionNames.ControlPrev ? -1 : 1);
+			var direction = (actionNameToHandle == ControlActionNames.ControlPrev ? -1 : 1);
 
 			if (childWithFocus == null)
 			{
@@ -90,36 +140,41 @@ class ControlContainer
 				}
 			}
 		}
-		else if (this.actions[actionNameToHandle] != null)
+		else if (this.actionsByName.get(actionNameToHandle) != null)
 		{
-			var action = this.actions[actionNameToHandle];
-			action.perform(universe); // todo
+			var action = this.actionsByName.get(actionNameToHandle);
+			action.perform.accept
+			(
+				new UniverseWorldPlaceEntities(universe, universe.world, null, null)
+			);
 			wasActionHandled = true;
 		}
 		else if (childWithFocus != null)
 		{
-			if (childWithFocus.actionHandle != null)
-			{
-				wasActionHandled = childWithFocus.actionHandle(actionNameToHandle, universe);
-			}
+			wasActionHandled = childWithFocus.actionHandle(actionNameToHandle, universe);
 		}
 
 		return wasActionHandled;
-	};
+	}
 
-	actionToInputsMappings()
+	public ActionToInputsMapping[] actionToInputsMappings()
 	{
 		return this._actionToInputsMappings;
-	};
+	}
 
-	childWithFocus()
+	public void childFocus(Control child)
 	{
-		return (this.indexOfChildWithFocus == null ? null : this.children[this.indexOfChildWithFocus] );
-	};
+		// todo
+	}
 
-	childWithFocusNextInDirection(direction)
+	public Control childWithFocus()
 	{
-		if (this.indexOfChildWithFocus == null)
+		return (this.indexOfChildWithFocus == -1 ? null : this.children[this.indexOfChildWithFocus] );
+	}
+
+	public Control childWithFocusNextInDirection(int direction)
+	{
+		if (this.indexOfChildWithFocus == -1)
 		{
 			var iStart = (direction == 1 ? 0 : this.children.length - 1);
 			var iEnd = (direction == 1 ? this.children.length : -1);
@@ -127,11 +182,7 @@ class ControlContainer
 			for (var i = iStart; i != iEnd; i += direction)
 			{
 				var child = this.children[i];
-				if
-				(
-					child.focusGain != null
-					&& ( child.isEnabled == null || child.isEnabled() )
-				)
+				if (child.isEnabled())
 				{
 					this.indexOfChildWithFocus = i;
 					break;
@@ -146,24 +197,20 @@ class ControlContainer
 			{
 				this.indexOfChildWithFocus += direction;
 
-				var isChildNextInRange = this.indexOfChildWithFocus.isInRangeMinMax
+				var isChildNextInRange = NumberHelper.isInRangeMinMax
 				(
-					0, this.children.length - 1
+					this.indexOfChildWithFocus, 0, this.children.length - 1
 				);
 
 				if (isChildNextInRange == false)
 				{
-					this.indexOfChildWithFocus = null;
+					this.indexOfChildWithFocus = -1;
 					break;
 				}
 				else
 				{
 					var child = this.children[this.indexOfChildWithFocus];
-					if
-					(
-						child.focusGain != null
-						&& ( child.isEnabled == null || child.isEnabled() )
-					)
+					if(child.isEnabled())
 					{
 						break;
 					}
@@ -176,13 +223,11 @@ class ControlContainer
 		var returnValue = this.childWithFocus();
 
 		return returnValue;
-	};
+	}
 
-	childrenAtPosAddToList
+	public List<Control> childrenAtPosAddToList
 	(
-		posToCheck,
-		listToAddTo,
-		addFirstChildOnly
+		Coords posToCheck, List<Control> listToAddTo, boolean addFirstChildOnly
 	)
 	{
 		posToCheck = this._posToCheck.overwriteWith(posToCheck).clearZ();
@@ -190,16 +235,17 @@ class ControlContainer
 		for (var i = this.children.length - 1; i >= 0; i--)
 		{
 			var child = this.children[i];
+			var childPos = child.pos();
 
 			var doesChildContainPos = posToCheck.isInRangeMinMax
 			(
-				child.pos,
-				this._childMax.overwriteWith(child.pos).add(child.size)
+				childPos,
+				this._childMax.overwriteWith(childPos).add(child.size())
 			);
 
 			if (doesChildContainPos)
 			{
-				listToAddTo.push(child);
+				listToAddTo.add(child);
 				if (addFirstChildOnly)
 				{
 					break;
@@ -208,115 +254,136 @@ class ControlContainer
 		}
 
 		return listToAddTo;
-	};
+	}
 
-	focusGain()
+	public void focusGain()
 	{
-		this.indexOfChildWithFocus = null;
+		this.indexOfChildWithFocus = -1;
 		var childWithFocus = this.childWithFocusNextInDirection(1);
 		if (childWithFocus != null)
 		{
 			childWithFocus.focusGain();
 		}
-	};
+	}
 
-	focusLose()
+	public void focusLose()
 	{
 		var childWithFocus = this.childWithFocus();
 		if (childWithFocus != null)
 		{
 			childWithFocus.focusLose();
-			this.indexOfChildWithFocus = null;
+			this.indexOfChildWithFocus = -1;
 		}
-	};
+	}
 
-	mouseClick(mouseClickPos)
+	public boolean mouseClick(Coords mouseClickPos)
 	{
 		mouseClickPos = this._mouseClickPos.overwriteWith
 		(
 			mouseClickPos
 		).subtract
 		(
-			this.pos
+			this.pos()
 		);
+
+		this.childrenContainingPos.clear();
 
 		var childrenContainingPos = this.childrenAtPosAddToList
 		(
-			mouseClickPos,
-			this.childrenContainingPos.clear(),
+			mouseClickPos, this.childrenContainingPos,
 			true // addFirstChildOnly
 		);
 
 		var wasClickHandled = false;
-		if (childrenContainingPos.length > 0)
+		if (childrenContainingPos.size() > 0)
 		{
-			var child = childrenContainingPos[0];
-			if (child.mouseClick != null)
+			var child = childrenContainingPos.get(0);
+			var wasClickHandledByChild = child.mouseClick(mouseClickPos);
+			if (wasClickHandledByChild)
 			{
-				var wasClickHandledByChild = child.mouseClick(mouseClickPos);
-				if (wasClickHandledByChild)
-				{
-					wasClickHandled = true;
-				}
+				wasClickHandled = true;
 			}
 		}
 
 		return wasClickHandled;
-	};
+	}
 
-	mouseMove(mouseMovePos)
+	public void mouseEnter() {}
+	public void mouseExit() {}
+
+	public boolean mouseMove(Coords mouseMovePos)
 	{
 		var temp = this.childrenContainingPosPrev;
 		this.childrenContainingPosPrev = this.childrenContainingPos;
 		this.childrenContainingPos = temp;
 
-		mouseMovePos = this._mouseMovePos.overwriteWith(mouseMovePos).subtract(this.pos);
+		mouseMovePos = this._mouseMovePos.overwriteWith
+		(
+			mouseMovePos
+		).subtract
+		(
+			this.pos()
+		);
+
+		this.childrenContainingPos.clear();
 
 		var childrenContainingPos = this.childrenAtPosAddToList
 		(
 			mouseMovePos,
-			this.childrenContainingPos.clear(),
+			this.childrenContainingPos,
 			true // addFirstChildOnly
 		);
 
-		for (var i = 0; i < childrenContainingPos.length; i++)
+		for (var i = 0; i < childrenContainingPos.size(); i++)
 		{
-			var child = childrenContainingPos[i];
+			var child = childrenContainingPos.get(i);
 
-			if (child.mouseMove != null)
-			{
-				child.mouseMove(mouseMovePos);
-			}
+			child.mouseMove(mouseMovePos);
+
 			if (this.childrenContainingPosPrev.indexOf(child) == -1)
 			{
-				if (child.mouseEnter != null)
-				{
-					child.mouseEnter();
-				}
+				child.mouseEnter();
 			}
 		}
 
-		for (var i = 0; i < this.childrenContainingPosPrev.length; i++)
+		for (var i = 0; i < this.childrenContainingPosPrev.size(); i++)
 		{
-			var child = this.childrenContainingPosPrev[i];
+			var child = this.childrenContainingPosPrev.get(i);
 			if (childrenContainingPos.indexOf(child) == -1)
 			{
-				if (child.mouseExit != null)
-				{
-					child.mouseExit();
-				}
+				child.mouseExit();
 			}
 		}
-	};
 
-	scalePosAndSize(scaleFactor)
+		return true;
+	}
+
+	private Control _parent;
+
+	public Control parent()
 	{
-		this.pos.multiply(scaleFactor);
-		this.size.multiply(scaleFactor);
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Coords pos()
+	{
+		return this._pos;
+	}
+
+	public Control scalePosAndSize(Coords scaleFactor)
+	{
+		this._pos.multiply(scaleFactor);
+		this._size.multiply(scaleFactor);
 
 		for (var i = 0; i < this.children.length; i++)
 		{
 			var child = this.children[i];
+			/*
 			if (child.scalePosAndSize == null)
 			{
 				child.pos.multiply(scaleFactor);
@@ -326,40 +393,45 @@ class ControlContainer
 					child.fontHeightInPixels *= scaleFactor.y;
 				}
 			}
-			else
-			{
-				child.scalePosAndSize(scaleFactor);
-			}
+			*/
+			
+			child.scalePosAndSize(scaleFactor);
+			
 		}
 
 		return this;
-	};
+	}
 
-	shiftChildPositions(displacement)
+	public void shiftChildPositions(Coords displacement)
 	{
 		for (var i = 0; i < this.children.length; i++)
 		{
 			var child = this.children[i];
 			child.pos.add(displacement);
 		}
-	};
+	}
 
-	toVenue()
+	public Coords size()
+	{
+		return this._size;
+	}
+
+	public Venue toVenue()
 	{
 		return new VenueFader(new VenueControls(this));
-	};
+	}
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
 		drawLoc = this._drawLoc.overwriteWith(drawLoc);
-		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos);
+		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos());
 		var style = this.style(universe);
 
 		display.drawRectangle
 		(
-			drawPos, this.size,
+			drawPos, this.size(),
 			style.colorBackground, style.colorBorder
 		);
 
@@ -369,5 +441,12 @@ class ControlContainer
 			var child = children[i];
 			child.draw(universe, display, drawLoc);
 		}
-	};
+	}
+
+	// Namable.
+
+	public String name()
+	{
+		return this._name;
+	}
 }

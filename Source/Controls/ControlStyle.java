@@ -1,28 +1,34 @@
+package Controls;
 
-class ControlStyle
+import Display.*;
+import Geometry.*;
+import Model.*;
+import Utility.*;
+
+public class ControlStyle implements Namable
 {
-	constructor(name, colorBackground, colorFill, colorBorder, colorDisabled)
+	public String _name;
+	public String colorBackground;
+	public String colorFill;
+	public String colorBorder;
+	public String colorDisabled;
+
+	public ControlStyle
+	(
+		String name, String colorBackground, String colorFill,
+		String colorBorder, String colorDisabled
+	)
 	{
-		this.name = name;
+		this._name = name;
 		this.colorBackground = colorBackground;
 		this.colorFill = colorFill;
 		this.colorBorder = colorBorder;
 		this.colorDisabled = colorDisabled;
 	}
-}
-{
-	ControlStyle.Instances = function()
-	{
-		if (ControlStyle._Instances == null)
-		{
-			ControlStyle._Instances = new ControlStyle_Instances();
-		}
-		return ControlStyle._Instances;
-	};
 
-	function ControlStyle_Instances()
+	public static class Instances
 	{
-		this.Default = new ControlStyle
+		public static ControlStyle Default = new ControlStyle
 		(
 			"Default", // name
 			"rgb(240, 240, 240)", // colorBackground
@@ -30,5 +36,12 @@ class ControlStyle
 			"Gray", // colorBorder
 			"LightGray" // colorDisabled
 		);
+	}
+
+	// Namable.
+
+	public String name()
+	{
+		return this._name;
 	}
 }

@@ -1,28 +1,36 @@
+package Display.Visuals;
 
-class VisualImageScaled
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VisualImageScaled implements VisualImage
 {
-	constructor(visualImage, sizeScaled)
+	private VisualImage visualImage;
+	private Coords sizeScaled;
+
+	// Helper variables.
+	private Coords _drawPos = new Coords();
+
+	public VisualImageScaled(VisualImage visualImage, Coords sizeScaled)
 	{
 		this.visualImage = visualImage;
 		this.sizeScaled = sizeScaled;
-
-		// Helper variables.
-		this._drawPos = new Coords();
 	}
 
-	static manyFromSizeAndVisuals(sizeScaled, visualsToScale)
+	public static VisualImageScaled[] manyFromSizeAndVisuals(Coords sizeScaled, Visual[] visualsToScale)
 	{
-		var returnValues = [];
+		var returnValues = new VisualImageScaled[visualsToScale.length];
 		for (var i = 0; i < visualsToScale.length; i++)
 		{
 			var visualToScale = visualsToScale[i];
-			var visualScaled = new VisualImageScaled(visualToScale, sizeScaled);
-			returnValues.push(visualScaled);
+			var visualScaled = new VisualImageScaled((VisualImage)visualToScale, sizeScaled);
+			returnValues[i] = visualScaled;
 		}
 		return returnValues;
-	};
+	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
 		var image = this.visualImage.image(universe);
 
@@ -30,8 +38,26 @@ class VisualImageScaled
 		var imageSize = this.sizeScaled;
 		var drawPos = this._drawPos.clear().subtract(imageSize).half().add
 		(
-			entity.locatable.loc.pos
+			entity.locatable().loc.pos
 		);
 		display.drawImageScaled(image, drawPos, imageSize);
-	};
+	}
+
+	public Image image(Universe universe)
+	{
+		return this.visualImage.image(universe);
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

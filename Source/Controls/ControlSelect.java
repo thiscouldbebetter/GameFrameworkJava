@@ -1,33 +1,56 @@
+package Controls;
 
-class ControlSelect
+import Display.*;
+import Geometry.*;
+import Model.*;
+import Utility.*;
+
+public class ControlSelect implements Control
 {
-	constructor
+	public String name;
+	public Coords pos;
+	public Coords size;
+	public DataBinding bindingForValueSelected;
+	public DataBinding _options;
+	public DataBinding bindingForOptionValues;
+	public DataBinding bindingForOptionText;
+	public double fontHeightInPixels;
+
+	private Integer indexOfOptionSelected;
+	private boolean isHighlighted;
+	private String styleName;
+
+	private Coords _drawPos;
+	private Coords _sizeHalf;
+	private Object _valueSelected;
+
+	public ControlSelect
 	(
-		name,
-		pos,
-		size,
-		valueSelected,
-		options,
-		bindingForOptionValues,
-		bindingForOptionText,
-		fontHeightInPixels
+		String name,
+		Coords pos,
+		Coords size,
+		DataBinding bindingForValueSelected,
+		DataBinding options,
+		DataBinding bindingForOptionValues,
+		DataBinding bindingForOptionText,
+		double fontHeightInPixels
 	)
 	{
 		this.name = name;
 		this.pos = pos;
 		this.size = size;
-		this._valueSelected = valueSelected;
+		this.bindingForValueSelected = valueSelected;
 		this._options = options;
 		this.bindingForOptionValues = bindingForOptionValues;
 		this.bindingForOptionText = bindingForOptionText;
 		this.fontHeightInPixels = fontHeightInPixels;
 
 		this.indexOfOptionSelected = null;
-		var valueSelected = this.valueSelected();
-		var options = this.options();
-		for (var i = 0; i < options.length; i++)
+		this._valueSelected = this.valueSelected();
+		var optionsFound = this.options();
+		for (var i = 0; i < optionsFound.length; i++)
 		{
-			var option = options[i];
+			var option = optionsFound[i];
 			var optionValue = this.bindingForOptionValues.contextSet
 			(
 				option
@@ -47,40 +70,44 @@ class ControlSelect
 		this._sizeHalf = new Coords();
 	}
 
-	actionHandle(actionNameToHandle)
+	public boolean actionHandle(String actionNameToHandle)
 	{
-		var controlActionNames = ControlActionNames.Instances();
-		if (actionNameToHandle == controlActionNames.ControlDecrement)
+		if (actionNameToHandle == ControlActionNames.ControlDecrement)
 		{
 			this.optionSelectedNextInDirection(-1);
 		}
 		else if
 		(
-			actionNameToHandle == controlActionNames.ControlIncrement
-			|| actionNameToHandle == controlActionNames.ControlConfirm
+			actionNameToHandle == ControlActionNames.ControlIncrement
+			|| actionNameToHandle == ControlActionNames.ControlConfirm
 		)
 		{
 			this.optionSelectedNextInDirection(1);
 		}
-	};
+	}
 
-	focusGain()
+	public void childFocus(Control child)
 	{
-			this.isHighlighted = true;
-	};
+		// todo
+	}
 
-	focusLose()
+	public void focusGain()
 	{
-			this.isHighlighted = false;
-	};
+		this.isHighlighted = true;
+	}
 
-	isEnabled()
+	public void focusLose()
+	{
+		this.isHighlighted = false;
+	}
+
+	public boolean isEnabled()
 	{
 		// todo
 		return true;
-	};
+	}
 
-	optionSelected()
+	public Object optionSelected()
 	{
 		var optionSelected =
 		(
@@ -89,17 +116,15 @@ class ControlSelect
 			: this.options()[this.indexOfOptionSelected]
 		);
 		return optionSelected;
-	};
+	}
 
-	optionSelectedNextInDirection(direction)
+	public void optionSelectedNextInDirection(int direction)
 	{
 		var options = this.options();
 
-		this.indexOfOptionSelected =
+		this.indexOfOptionSelected = NumberHelper.wrapToRangeMinMax
 		(
-			this.indexOfOptionSelected + direction
-		).wrapToRangeMinMax
-		(
+			this.indexOfOptionSelected + direction,
 			0, options.length
 		);
 
@@ -111,40 +136,58 @@ class ControlSelect
 			: this.bindingForOptionValues.contextSet(optionSelected).get()
 		);
 
-		if (this._valueSelected != null && this._valueSelected.constructor.name == DataBinding.name)
-		{
-			this._valueSelected.set(valueToSelect);
-		}
-		else
-		{
-			this._valueSelected = valueToSelect;
-		}
-	};
+		this._valueSelected.set(valueToSelect);
+	}
 
-	options()
+	public Object[] options()
 	{
-		return (this._options.get == null ? this._options : this._options.get() );
-	};
+		return (Object[])(this._options.get());
+	}
 
-	mouseClick(clickPos)
+	public boolean mouseClick(Coords clickPos)
 	{
 		this.optionSelectedNextInDirection(1);
 		return true; // wasClickHandled
-	};
+	}
 
-	style(universe)
-	{
-		return universe.controlBuilder.styles[this.styleName == null ? "Default" : this.styleName];
-	};
+	public void mouseEnter() {}
+	public void mouseExit() {}
 
-	valueSelected()
+	public boolean mouseMove(Coords mousePos)
 	{
-		return (this._valueSelected == null ? null : (this._valueSelected.get == null ? this._valueSelected : this._valueSelected.get() ) );
-	};
+		return true; // todo
+	}
+
+	private Control _parent;
+
+	public Control parent()
+	{
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Control scalePosAndSize(Coords scaleFactors)
+	{
+		return this; // todo
+	}
+
+	public ControlStyle style(Universe universe)
+	{
+		return universe.controlBuilder.stylesByName.get(this.styleName == null ? "Default" : this.styleName);
+	}
+
+	public Object valueSelected()
+	{
+		return this._valueSelected.get();
+	}
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
 		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos);
 
@@ -164,7 +207,7 @@ class ControlSelect
 		(
 			optionSelected == null
 			? "-"
-			: this.bindingForOptionText.contextSet(optionSelected).get()
+			: (String)( this.bindingForOptionText.contextSet(optionSelected).get() )
 		);
 
 		display.drawText
@@ -178,5 +221,5 @@ class ControlSelect
 			true, // isCentered
 			this.size.x // widthMaxInPixels
 		);
-	};
+	}
 }

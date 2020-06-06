@@ -1,18 +1,28 @@
+package Display.Visuals;
 
-class VisualDirectional
+import Display.*;
+import Model.*;
+import Utility.*;
+
+public class VisualDirectional implements Visual
 {
-	constructor(visualForNoDirection, visualsForDirections)
+	private Visual visualForNoDirection;
+	private Visual[] visualsForDirections;
+
+	private int numberOfDirections;
+
+	public VisualDirectional(Visual visualForNoDirection, Visual[] visualsForDirections)
 	{
 		this.visualForNoDirection = visualForNoDirection;
 		this.visualsForDirections = visualsForDirections;
 		this.numberOfDirections = this.visualsForDirections.length;
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var loc = entity.locatable.loc;
+		var loc = entity.locatable().loc;
 		var headingInTurns = loc.orientation.headingInTurns();
-		var visualForHeading;
+		Visual visualForHeading;
 
 		if (headingInTurns == null)
 		{
@@ -20,14 +30,28 @@ class VisualDirectional
 		}
 		else
 		{
-			var direction =
-				Math.round
-				(
-					headingInTurns * this.numberOfDirections
-				).wrapToRangeMinMax(0, this.numberOfDirections);
+			var direction = NumberHelper.wrapToRangeMinMax
+			(
+				Math.round(headingInTurns * this.numberOfDirections),
+				0,
+				this.numberOfDirections
+			);
 			visualForHeading = this.visualsForDirections[direction];
 		}
 
 		visualForHeading.draw(universe, world, display, entity);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

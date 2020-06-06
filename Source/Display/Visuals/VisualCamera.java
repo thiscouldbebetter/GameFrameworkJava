@@ -1,18 +1,22 @@
+package Display.Visuals;
 
-class VisualCamera
+public class VisualCamera implements Visual
 {
-	constructor(child, cameraFactory)
+	private Visual child;
+	private Supplier<Camera> cameraFactory;
+
+	// Helper variables.
+	private Coords _posSaved = new Coords();
+
+	public VisualCamera(Visual child, Supplier<Camera> cameraFactory)
 	{
 		this.child = child;
 		this.cameraFactory = cameraFactory;
-
-		// Helper variables.
-		this._posSaved = new Coords();
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var drawablePos = entity.locatable.loc.pos;
+		var drawablePos = entity.locatable().loc.pos;
 		this._posSaved.overwriteWith(drawablePos);
 
 		var camera = this.cameraFactory(universe, world);
@@ -24,7 +28,7 @@ class VisualCamera
 		}
 		else
 		{
-			var drawableCollider = entity.Boundable.bounds;
+			var drawableCollider = entity.boundable().bounds;
 			var cameraViewCollider = camera.viewCollider;
 			var isInCameraBox =
 				universe.collisionHelper.doCollidersCollide(drawableCollider, cameraViewCollider);
@@ -35,5 +39,18 @@ class VisualCamera
 		}
 
 		drawablePos.overwriteWith(this._posSaved);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

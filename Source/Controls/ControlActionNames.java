@@ -1,26 +1,11 @@
+package Controls;
 
-class ControlActionNames
+public class ControlActionNames
 {
-	// Do nothing.
-}
-{
-	function ControlActionNames_Instances()
-	{
-		this.ControlCancel = "ControlCancel";
-		this.ControlConfirm = "ControlConfirm";
-		this.ControlDecrement = "ControlDecrement";
-		this.ControlIncrement = "ControlIncrement";
-		this.ControlNext = "ControlNext";
-		this.ControlPrev = "ControlPrev";
-	}
-
-	ControlActionNames.Instances = function()
-	{
-		if (ControlActionNames._instances == null)
-		{
-			ControlActionNames._instances = new ControlActionNames_Instances();
-		}
-
-		return ControlActionNames._instances;
-	};
+	public static String ControlCancel = "ControlCancel";
+	public static String ControlConfirm = "ControlConfirm";
+	public static String ControlDecrement = "ControlDecrement";
+	public static String ControlIncrement = "ControlIncrement";
+	public static String ControlNext = "ControlNext";
+	public static String ControlPrev = "ControlPrev";
 }

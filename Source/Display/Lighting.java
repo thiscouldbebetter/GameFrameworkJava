@@ -1,10 +1,11 @@
+package Display;
 
-class Lighting
+public class Lighting
 {
-	constructor(ambientIntensity, direction, directionalIntensity)
+	public Lighting(ambientIntensity, direction, directionalIntensity)
 	{
 		this.ambientIntensity = ambientIntensity;
-		this.direction = direction.clone().normalize();
+		this.direction = direction.clonify().normalize();
 		this.directionalIntensity = directionalIntensity;
 	}
 }

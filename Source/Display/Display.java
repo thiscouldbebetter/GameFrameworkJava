@@ -1,41 +1,80 @@
+package Display;
 
-class Display
+import Geometry.*;
+import Geometry.Shapes.*;
+import Media.*;
+import Model.*;
+import Utility.*;
+
+public class Display implements Platformable
 {
-	constructor(sizesAvailable, fontName, fontHeightInPixels, colorFore, colorBack, isInvisible)
+	public Coords[] sizesAvailable;
+	public String fontName;
+	public double fontHeightInPixels;
+	public String colorFore;
+	public String colorBack;
+	public boolean isInvisible;
+
+	public Coords sizeInPixels;
+
+	private Coords _drawPos;
+	private Coords _scaleFactor;
+	private Coords _sizeDefault;
+	private Coords _sizeHalf;
+	private Coords _zeroes;
+
+	public Display(Coords size)
+	{
+		this(new Coords[] { size }, "Font", 10, "Black", "White");
+	}
+
+	public Display
+	(
+		Coords[] sizesAvailable, String fontName, double fontHeightInPixels,
+		String colorFore, String colorBack
+	)
+	{
+		this(sizesAvailable, fontName, fontHeightInPixels, colorFore, colorBack, false);
+	}
+
+	public Display
+	(
+		Coords[] sizesAvailable, String fontName, double fontHeightInPixels,
+		String colorFore, String colorBack, boolean isInvisible
+	)
 	{
 		this.sizesAvailable = sizesAvailable;
 		this._sizeDefault = this.sizesAvailable[0];
 		this.sizeInPixels = this._sizeDefault;
 		this.fontName = fontName;
-		this.fontHeightInPixels = fontHeightInPixels || 10;
+		this.fontHeightInPixels = fontHeightInPixels;
 		this.colorFore = colorFore;
 		this.colorBack = colorBack;
-		this.isInvisible = isInvisible || false;
+		this.isInvisible = isInvisible;
 
 		// Helper variables.
 
 		this._drawPos = new Coords();
 		this._sizeHalf = new Coords();
 		this._zeroes = Coords.Instances().Zeroes;
+		this._scaleFactor = new Coords();
 	}
 
 	// constants
 
-	static RadiansPerTurn = Math.PI * 2.0;
+	public static double RadiansPerTurn = Math.PI * 2.0;
 
 	// methods
 
-	clear()
+	public void clear()
 	{
-		this.graphics.clearRect
-		(
-			0, 0, this.sizeInPixels.x, this.sizeInPixels.y
-		);
-	};
+		// todo
+	}
 
-	drawArc
+	public void drawArc
 	(
-		center, radiusInner, radiusOuter, angleStartInTurns, angleStopInTurns, colorFill, colorBorder
+		Coords center, double radiusInner, double radiusOuter, double angleStartInTurns,
+		double angleStopInTurns, String colorFill, String colorBorder
 	)
 	{
 		var drawPos = this._drawPos.overwriteWith(center);
@@ -44,275 +83,107 @@ class Display
 
 		if (colorFill != null)
 		{
-			this.graphics.fillStyle = colorFill;
-
-			this.graphics.beginPath();
-			this.graphics.arc
-			(
-				center.x, center.y,
-				radiusInner,
-				angleStartInRadians, angleStopInRadians
-			);
-			drawPos.overwriteWith(center).add
-			(
-				new Polar(angleStopInTurns, radiusOuter).toCoords( new Coords() )
-			);
-			this.graphics.lineTo(drawPos.x, drawPos.y);
-			this.graphics.arc
-			(
-				center.x, center.y,
-				radiusOuter,
-				angleStopInRadians, angleStartInRadians,
-				true // counterclockwise
-			);
-			this.graphics.closePath();
-			this.graphics.fill();
+			// todo
 		}
 
 		if (colorBorder != null)
 		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.beginPath();
-			this.graphics.arc
-			(
-				center.x, center.y,
-				radiusInner,
-				angleStartInRadians, angleStopInRadians
-			);
-			drawPos.overwriteWith(center).add
-			(
-				new Polar(angleStopInTurns, radiusOuter).toCoords( new Coords() )
-			);
-			this.graphics.lineTo(drawPos.x, drawPos.y);
-			this.graphics.arc
-			(
-				center.x, center.y,
-				radiusOuter,
-				angleStopInRadians, angleStartInRadians,
-				true // counterclockwise
-			);
-			this.graphics.closePath();
-			this.graphics.stroke();
+			// todo
 		}
 	};
 
-	drawBackground(colorBack, colorBorder)
+	public void drawBackground(String colorBack, String colorBorder)
 	{
 		this.drawRectangle
 		(
 			this._zeroes,
 			this.sizeDefault(), // Automatic scaling.
-			colorBack || this.colorBack,
-			colorBorder || this.colorBorder
+			(colorBack == null ? this.colorBack : colorBack),
+			(colorBorder == null ? this.colorFore : colorBorder)
 		);
 	};
 
-	drawCircle(center, radius, colorFill, colorBorder)
+	public void drawCircle(Coords center, double radius, String colorFill, String colorBorder)
 	{
 		var drawPos = this._drawPos.overwriteWith(center);
 
-		this.graphics.beginPath();
-		this.graphics.arc
-		(
-			drawPos.x, drawPos.y,
-			radius,
-			0, Display.RadiansPerTurn
-		);
-
+		// todo
+		
 		if (colorFill != null)
 		{
-			this.graphics.fillStyle = colorFill;
-			this.graphics.fill();
+			// todo
 		}
 
 		if (colorBorder != null)
 		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.stroke();
+			// todo
 		}
 	};
 
-	drawCircleWithGradient(center, radius, gradientFill, colorBorder)
+	public void drawCircleWithGradient(Coords center, double radius, Gradient gradientFill, String colorBorder)
 	{
-		this.graphics.beginPath();
-		this.graphics.arc
-		(
-			center.x, center.y,
-			radius,
-			0, Display.RadiansPerTurn
-		);
-
-		var systemGradient = this.graphics.createRadialGradient
-		(
-			center.x, center.y, 0,
-			center.x, center.y, radius
-		);
-
-		var gradientStops = gradientFill.stops;
-		for (var i = 0; i < gradientStops.length; i++)
-		{
-			var stop = gradientStops[i];
-			systemGradient.addColorStop(stop.position, stop.color);
-		}
-
-		this.graphics.fillStyle = systemGradient;
-		this.graphics.fill();
+		// todo
 
 		if (colorBorder != null)
 		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.stroke();
+			// todo
 		}
 	};
 
-	drawCrosshairs(center, radius, color)
+	public void drawCrosshairs(Coords center, double radius, String color)
 	{
 		var drawPos = this._drawPos.overwriteWith(center);
-		this.graphics.beginPath();
-		this.graphics.strokeStyle = color;
-		this.graphics.moveTo(drawPos.x - radius, drawPos.y);
-		this.graphics.lineTo(drawPos.x + radius, drawPos.y);
-		this.graphics.moveTo(drawPos.x, drawPos.y - radius);
-		this.graphics.lineTo(drawPos.x, drawPos.y + radius);
-		this.graphics.stroke();
+		// todo
 	};
 
-	drawEllipse
+	public void drawEllipse
 	(
-		center, semimajorAxis, semiminorAxis, rotationInTurns, colorFill, colorBorder
+		Coords center, double semimajorAxis, double semiminorAxis, double rotationInTurns, String colorFill, String colorBorder
 	)
 	{
 		var drawPos = this._drawPos.overwriteWith(center);
 
-		this.graphics.save();
-
-		this.graphics.translate(center.x, center.y);
-
-		var rotationInRadians = rotationInTurns * Polar.RadiansPerTurn;
-		this.graphics.rotate(rotationInRadians);
-
-		var ratioOfHeightToWidth = semiminorAxis / semimajorAxis;
-		this.graphics.scale(1, ratioOfHeightToWidth);
-
-		this.graphics.beginPath();
-		this.graphics.arc
-		(
-			0, 0, // center
-			semimajorAxis, // "radius"
-			0, Math.PI * 2.0 // start, stop angle
-		);
-
-		if (colorFill != null)
-		{
-			this.graphics.fillStyle = colorFill;
-			this.graphics.fill();
-		}
-
-		if (colorBorder != null)
-		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.stroke();
-		}
-
-		this.graphics.restore();
+		// todo
 	};
 
-	drawImage(imageToDraw, pos)
+	public void drawImage(Image imageToDraw, Coords pos)
 	{
-		this.graphics.drawImage(imageToDraw.systemImage, pos.x, pos.y);
+		// todo
 	};
 
-	drawImagePartial(imageToDraw, pos, boxToShow)
+	public void drawImagePartial(Image imageToDraw, Coords pos, Box boxToShow)
 	{
-		var sourcePos = boxToShow.min();
-		var sourceSize = boxToShow.size;
-
-		this.graphics.drawImage
-		(
-			imageToDraw.systemImage,
-			sourcePos.x, sourcePos.y, sourceSize.x, sourceSize.y,
-			pos.x, pos.y, sourceSize.x, sourceSize.y
-		);
+		// todo
 	};
 
-	drawImageScaled(imageToDraw, pos, size)
+	public void drawImageScaled(Image imageToDraw, Coords pos, Coords size)
 	{
-		this.graphics.drawImage(imageToDraw.systemImage, pos.x, pos.y, size.x, size.y);
+		// todo
 	};
 
-	drawLine(fromPos, toPos, color, lineThickness)
+	public void drawLine(Coords fromPos, Coords toPos, String color, double lineThickness)
 	{
 		var drawPos = this._drawPos;
-
-		this.graphics.strokeStyle = color;
-		var lineWidthToRestore = this.graphics.lineWidth;
-		if (lineThickness != null)
-		{
-			this.graphics.lineWidth = lineThickness;
-		}
-
-		this.graphics.beginPath();
-
-		drawPos.overwriteWith(fromPos);
-		this.graphics.moveTo(drawPos.x, drawPos.y);
-
-		drawPos.overwriteWith(toPos);
-		this.graphics.lineTo(drawPos.x, drawPos.y);
-
-		this.graphics.stroke();
-
-		this.graphics.lineWidth = lineWidthToRestore;
+		// todo
 	};
 
-	drawPath(vertices, color, lineThickness, isClosed)
+	public void drawPath(Coords[] vertices, String color, double lineThickness, boolean isClosed)
 	{
-		var lineWidthSaved = this.graphics.lineWidth;
-
-		this.graphics.lineWidth = (lineThickness == null ? 1 : lineThickness);
-
-		this.graphics.beginPath();
-
-		var drawPos = this._drawPos;
-
-		for (var i = 0; i < vertices.length; i++)
-		{
-			var vertex = vertices[i];
-			drawPos.overwriteWith(vertex);
-			if (i == 0)
-			{
-				this.graphics.moveTo(drawPos.x, drawPos.y);
-			}
-			else
-			{
-				this.graphics.lineTo(drawPos.x, drawPos.y);
-			}
-		}
-
+		// todo
 		if (isClosed)
 		{
-			this.graphics.closePath();
+			// todo
 		}
-
-		this.graphics.strokeStyle = color;
-
-		this.graphics.stroke();
-
-		this.graphics.lineWidth = lineWidthSaved;
+		// todo
 	};
 
-	drawPixel(pos, color)
+	public void drawPixel(Coords pos, String color)
 	{
-		this.graphics.fillStyle = color;
-		this.graphics.fillRect
-		(
-			pos.x, pos.y, 1, 1
-		);
+		// todo
 	};
 
-	drawPolygon(vertices, colorFill, colorBorder)
+	public void drawPolygon(Coords[] vertices, String colorFill, String colorBorder)
 	{
-		this.graphics.beginPath();
-
 		var drawPos = this._drawPos;
 
 		for (var i = 0; i < vertices.length; i++)
@@ -321,36 +192,45 @@ class Display
 			drawPos.overwriteWith(vertex);
 			if (i == 0)
 			{
-				this.graphics.moveTo(drawPos.x, drawPos.y);
+				// todo
 			}
 			else
 			{
-				this.graphics.lineTo(drawPos.x, drawPos.y);
+				// todo
 			}
 		}
 
-		this.graphics.closePath();
-
 		if (colorFill != null)
 		{
-			this.graphics.fillStyle = colorFill;
-			this.graphics.fill();
+			// todo
 		}
 
 		if (colorBorder != null)
 		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.stroke();
+			// todo
 		}
-	};
+	}
 
-	drawRectangle
+	public void drawRectangle
 	(
-		pos,
-		size,
-		colorFill,
-		colorBorder,
-		areColorsReversed
+		Coords pos, Coords size, String colorFill
+	)
+	{
+		this.drawRectangle(pos, size, colorFill);
+	}
+
+	public void drawRectangle
+	(
+		Coords pos, Coords size, String colorFill, String colorBorder
+	)
+	{
+		this.drawRectangle(pos, size, colorFill, colorBorder, false);
+	}
+
+	public void drawRectangle
+	(
+		Coords pos, Coords size, String colorFill, String colorBorder,
+		boolean areColorsReversed
 	)
 	{
 		if (areColorsReversed)
@@ -362,31 +242,18 @@ class Display
 
 		if (colorFill != null)
 		{
-			this.graphics.fillStyle = colorFill;
-			this.graphics.fillRect
-			(
-				pos.x, pos.y,
-				size.x, size.y
-			);
+			// todo
 		}
 
 		if (colorBorder != null)
 		{
-			this.graphics.strokeStyle = colorBorder;
-			this.graphics.strokeRect
-			(
-				pos.x, pos.y,
-				size.x, size.y
-			);
+			// todo
 		}
 	};
 
-	drawRectangleCentered
+	public void drawRectangleCentered
 	(
-		pos,
-		size,
-		colorFill,
-		colorBorder
+		Coords pos, Coords size, String colorFill, String colorBorder
 	)
 	{
 		var sizeHalf = this._sizeHalf.overwriteWith(size).half();
@@ -394,23 +261,19 @@ class Display
 		this.drawRectangle(posAdjusted, size, colorFill, colorBorder);
 	};
 
-	drawText
+	public void drawText
 	(
-		text,
-		fontHeightInPixels,
-		pos,
-		colorFill,
-		colorOutline,
-		areColorsReversed,
-		isCentered,
-		widthMaxInPixels
+		String text,
+		double fontHeightInPixels,
+		Coords pos,
+		String colorFill,
+		String colorOutline,
+		boolean areColorsReversed,
+		boolean isCentered,
+		double widthMaxInPixels
 	)
 	{
-		var fontToRestore = this.graphics.font;
-		if (fontHeightInPixels == null)
-		{
-			fontHeightInPixels = this.fontHeightInPixels;
-		}
+		//var fontToRestore = this.graphics.font;
 
 		this.fontSet(null, fontHeightInPixels);
 
@@ -426,8 +289,6 @@ class Display
 			colorFill = this.colorFore;
 		}
 
-		this.graphics.fillStyle = colorFill;
-
 		var drawPos = new Coords(pos.x, pos.y + fontHeightInPixels);
 
 		var textAsLines = text.split("\n");
@@ -436,12 +297,9 @@ class Display
 			var textLine = textAsLines[i];
 
 			var textTrimmed = textLine;
-			if (widthMaxInPixels != null)
+			while (this.textWidthForFontHeight(textTrimmed, fontHeightInPixels) > widthMaxInPixels)
 			{
-				while (this.textWidthForFontHeight(textTrimmed, fontHeightInPixels) > widthMaxInPixels)
-				{
-					textTrimmed = textTrimmed.substr(0, textTrimmed.length - 1);
-				}
+				textTrimmed = textTrimmed.substring(0, textTrimmed.length() - 1);
 			}
 
 			var textWidthInPixels = this.textWidthForFontHeight
@@ -456,41 +314,39 @@ class Display
 
 			if (colorOutline != null)
 			{
-				this.graphics.strokeStyle = colorOutline;
-				this.graphics.strokeText(textTrimmed, drawPos.x, drawPos.y);
+				// todo
 			}
 
-			this.graphics.fillText(textTrimmed, drawPos.x, drawPos.y);
+			// todo
 
 			drawPos.y += fontHeightInPixels;
 		}
-
-		this.graphics.font = fontToRestore;
 	};
 
-	fontSet(fontName, fontHeightInPixels)
+	public void fontSet(String fontName, double fontHeightInPixels)
 	{
 		if (fontName != this.fontName || fontHeightInPixels != this.fontHeightInPixels)
 		{
-			this.fontName = fontName || this.fontName;
-			this.fontHeightInPixels = fontHeightInPixels || this.fontHeightInPixels;
-			this.graphics.font = this.fontHeightInPixels + "px " + this.fontName;
+			this.fontName = (fontName == null ? this.fontName : fontName);
+			this.fontHeightInPixels = fontHeightInPixels;
+			//this.graphics.font = this.fontHeightInPixels + "px " + this.fontName;
 		}
 	};
 
-	hide(universe)
+	public void hide(Universe universe)
 	{
 		universe.platformHelper.platformableRemove(this);
 	};
 
-	initialize(universe)
+	public Display initialize(Universe universe)
 	{
 		if (this.isInvisible)
 		{
-			this.toDomElement();
+			//this.toDomElement();
 		}
 		else if (universe == null)
 		{
+			/*
 			// hack - Allows use of this class
 			// without including PlatformHelper or Universe.
 			var domElement = this.toDomElement();
@@ -502,6 +358,7 @@ class Display
 				document.body.appendChild(divMain);
 			}
 			divMain.appendChild(domElement);
+			*/
 		}
 		else
 		{
@@ -511,56 +368,41 @@ class Display
 		return this;
 	};
 
-	sizeDefault()
+	public Coords sizeDefault()
 	{
 		return this._sizeDefault;
 	};
 
-	scaleFactor()
+	public Coords scaleFactor()
 	{
 		if (this._scaleFactor == null)
 		{
 			var sizeBase = this.sizesAvailable[0];
-			this._scaleFactor = this.sizeInPixels.clone().divide(sizeBase);
+			this._scaleFactor = this.sizeInPixels.clonify().divide(sizeBase);
 		}
 		return this._scaleFactor;
 	};
 
-	textWidthForFontHeight(textToMeasure, fontHeightInPixels)
+	public double textWidthForFontHeight(String textToMeasure, double fontHeightInPixels)
 	{
-		var fontToRestore = this.graphics.font;
+		// var fontToRestore = this.graphics.font;
 		this.fontSet(null, fontHeightInPixels);
-		var returnValue = this.graphics.measureText(textToMeasure).width;
-		this.graphics.font = fontToRestore;
+		//var returnValue = this.graphics.measureText(textToMeasure).width;
+		// this.graphics.font = fontToRestore;
+		var returnValue = 0; // todo
 		return returnValue;
 	};
 
-	toImage()
+	public Image toImage()
 	{
-		return Image.fromSystemImage("[fromDisplay]", this.canvas);
+		return null; // todo
 	};
 
 	// platformable
 
-	toDomElement()
+	public Object toPlatformable()
 	{
-		if (this.canvas == null)
-		{
-			this.canvas = document.createElement("canvas");
-
-			this.canvas.width = this.sizeInPixels.x;
-			this.canvas.height = this.sizeInPixels.y;
-
-			this.graphics = this.canvas.getContext("2d");
-
-			this.fontSet(null, this.fontHeightInPixels);
-			this.widthWithFontFallthrough = this.graphics.measureText(this.testString).width;
-
-			this._scaleFactor = null;
-			var scaleFactor = this.scaleFactor();
-			this.graphics.scale(scaleFactor.x, scaleFactor.y);
-		}
-
-		return this.canvas;
+		// todo
+		return null;
 	};
 }

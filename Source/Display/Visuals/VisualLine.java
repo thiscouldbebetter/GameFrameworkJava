@@ -1,21 +1,25 @@
+package Display.Visuals;
 
-class VisualLine
+public class VisualLine implements Visual
 {
-	constructor(fromPos, toPos, color)
+	private Coords fromPos;
+	private Coords toPos;
+	private String color;
+
+	// Helper variables.
+	private Coords drawPosFrom = new Coords();
+	private Coords drawPosTo = new Coords();
+
+	public VisualLine(Coords fromPos, Coords toPos, String color)
 	{
 		this.fromPos = fromPos;
 		this.toPos = toPos;
 		this.color = color;
-
-		// Helper variables.
-
-		this.drawPosFrom = new Coords();
-		this.drawPosTo = new Coords();
 	}
 
-	draw(universe, world, drawable)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var pos = entity.locatable.loc.pos;
+		var pos = entity.locatable().loc.pos;
 		var drawPosFrom = this.drawPosFrom.overwriteWith
 		(
 			pos
@@ -38,5 +42,17 @@ class VisualLine
 			drawPosTo,
 			this.color
 		);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
 }

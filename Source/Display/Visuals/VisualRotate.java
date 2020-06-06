@@ -1,18 +1,27 @@
+package Display.Visuals;
 
-class VisualRotate
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VisualRotate implements Visual
 {
-	constructor(rotationInTurns, child)
+	public double rotationInTurns;
+	public Visual child;
+
+	public VisualRotate(double rotationInTurns, Visual child)
 	{
 		this.rotationInTurns = rotationInTurns;
 		this.child = child;
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
+		/*
 		var graphics = display.graphics;
 		graphics.save();
 
-		var centerOfRotation = entity.locatable.loc.pos;
+		var centerOfRotation = entity.locatable().loc.pos;
 		graphics.translate(centerOfRotation.x, centerOfRotation.y);
 
 		var rotationInRadians = this.rotationInTurns * Polar.RadiansPerTurn;
@@ -23,5 +32,18 @@ class VisualRotate
 		this.child.draw(universe, world, display, entity);
 
 		graphics.restore();
-	};
+		*/
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
 }

@@ -1,7 +1,36 @@
+package Display.Visuals;
 
-class VisualArc
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VisualArc implements Visual
 {
-	constructor(radiusOuter, radiusInner, directionMin, angleSpannedInTurns, colorFill, colorBorder)
+	private double radiusOuter;
+	private double radiusInner;
+	private Coords directionMin;
+	private double angleSpannedInTurns;
+	private String colorFill;
+	private String colorBorder;
+
+	// helper variables
+	private Coords _drawPos = new Coords();
+	private Polar _polar = new Polar();
+
+	public VisualArc
+	(
+		double radiusOuter, double radiusInner, Coords directionMin,
+		double angleSpannedInTurns, String colorFill
+	)
+	{
+		this(radiusOuter, radiusInner, directionMin, angleSpannedInTurns, colorFill, null);
+	}
+
+	public VisualArc
+	(
+		double radiusOuter, double radiusInner, Coords directionMin,
+		double angleSpannedInTurns, String colorFill, String colorBorder
+	)
 	{
 		this.radiusOuter = radiusOuter;
 		this.radiusInner = radiusInner;
@@ -9,15 +38,11 @@ class VisualArc
 		this.angleSpannedInTurns = angleSpannedInTurns;
 		this.colorFill = colorFill;
 		this.colorBorder = colorBorder;
-
-		// helper variables
-		this._drawPos = new Coords();
-		this._polar = new Polar();
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var drawableLoc = entity.locatable.loc;
+		var drawableLoc = entity.locatable().loc;
 		var drawPos = this._drawPos.overwriteWith
 		(
 			drawableLoc.pos
@@ -36,5 +61,18 @@ class VisualArc
 			wedgeAngleMin, wedgeAngleMax,
 			this.colorFill, this.colorBorder
 		);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

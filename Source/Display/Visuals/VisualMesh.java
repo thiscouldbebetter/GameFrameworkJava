@@ -1,33 +1,51 @@
-class VisualMesh
+package Display.Visuals;
+
+public class VisualMesh implements Visual
 {
-	constructor(mesh)
+	private Mesh mesh;
+
+	public VisualMesh(Mesh mesh)
 	{
 		this.mesh = mesh;
 	}
 
 	// Cloneable.
 
-	clone()
+	public VisualMesh clonify()
 	{
-		return new VisualMesh(this.mesh.clone());
+		return new VisualMesh(this.mesh.clonify());
 	};
 
-	overwriteWith(other)
+	public VisualMesh overwriteWith(other)
 	{
 		this.mesh.overwriteWith(other.mesh);
+		return this;
 	};
 
 	// Transformable.
 
-	transform(transformToApply)
+	public VisualMesh transform(Transform transformToApply)
 	{
-		transformToApply.transform(this.mesh);
-	};
+		return transformToApply.transform(this.mesh);
+	}
 
 	// Visual.
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		display.drawMeshWithOrientation(this.mesh, entity.locatable.loc.orientation);
-	};
+		display.drawMeshWithOrientation(this.mesh, entity.locatable().loc.orientation);
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

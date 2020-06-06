@@ -1,33 +1,72 @@
+package Controls;
 
-class VenueMessage
+import java.util.*;
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VenueMessage implements Venue
 {
-	constructor(messageToShow, acknowledge, venuePrev, sizeInPixels, showMessageOnly)
+	private String messageToShow;
+	private Runnable acknowledge;
+	private Venue venuePrev;
+	private Coords sizeInPixels;
+	private boolean showMessageOnly;
+
+	private Coords _sizeInPixels;
+	private Venue _venueInner;
+
+	public VenueMessage(String messageToShow)
+	{
+		this(messageToShow, null, null, null);
+	}
+
+	public VenueMessage
+	(
+		String messageToShow, Runnable acknowledge, Venue venuePrev,
+		Coords sizeInPixels
+	)
+	{
+		this(messageToShow, acknowledge, venuePrev, sizeInPixels, false);
+	}
+
+	public VenueMessage
+	(
+		String messageToShow, Runnable acknowledge, Venue venuePrev,
+		Coords sizeInPixels, boolean showMessageOnly
+	)
 	{
 		this.messageToShow = messageToShow;
 		this.acknowledge = acknowledge;
 		this.venuePrev = venuePrev;
 		this._sizeInPixels = sizeInPixels;
-		this.showMessageOnly = showMessageOnly || false;
+		this.showMessageOnly = showMessageOnly;
 	}
 
 	// instance methods
 
-	draw(universe)
+	public void draw(Universe universe)
 	{
 		this.venueInner(universe).draw(universe);
-	};
+	}
 
-	sizeInPixels(universe)
+	public Coords sizeInPixels(Universe universe)
 	{
 		return (this._sizeInPixels == null ? universe.display.sizeInPixels : this._sizeInPixels);
-	};
+	}
 
-	updateForTimerTick(universe)
+	public void finalize(Universe universe)
+	{}
+
+	public void initialize(Universe universe)
+	{}
+
+	public void updateForTimerTick(Universe universe)
 	{
 		this.venueInner(universe).updateForTimerTick(universe);
-	};
+	}
 
-	venueInner(universe)
+	public Venue venueInner(Universe universe)
 	{
 		if (this._venueInner == null)
 		{
@@ -42,18 +81,21 @@ class VenueMessage
 				this.showMessageOnly
 			);
 
-			var venuesToLayer = [];
+			var venuesToLayer = new ArrayList<Venue>();
 
 			if (this.venuePrev != null)
 			{
-				venuesToLayer.push(this.venuePrev);
+				venuesToLayer.add(this.venuePrev);
 			}
 
-			venuesToLayer.push(new VenueControls(controlMessage));
+			venuesToLayer.add(new VenueControls(controlMessage));
 
-			this._venueInner = new VenueLayered(venuesToLayer);
+			this._venueInner = new VenueLayered
+			(
+				venuesToLayer.toArray(new Venue[0])
+			);
 		}
 
 		return this._venueInner;
-	};
+	}
 }

@@ -1,17 +1,24 @@
+package Display;
 
-class Gradient
+public class Gradient
 {
-	constructor(stops)
+	private Gradient.Stop[] stops;
+
+	public Gradient(Gradient.Stop[] stops)
 	{
 		this.stops = stops;
 	}
-}
 
-class GradientStop
-{
-	constructor(position, color)
+	public class Stop
 	{
-		this.position = position;
-		this.color = color;
+		private double position;
+		private String color;
+
+		public Stop(double position, String color)
+		{
+			this.position = position;
+			this.color = color;
+		}
 	}
+
 }

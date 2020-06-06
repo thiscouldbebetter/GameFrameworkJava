@@ -1,7 +1,18 @@
+package Display.Visuals;
 
-class VisualJump2D
+import Display.*;
+import Geometry.*;
+import Geometry.Transforms.*;
+import Model.*;
+
+public class VisualJump2D implements Visual
 {
-	constructor(visualJumper, visualShadow, cameraFactory)
+	private Visual visualJumper;
+	private Visual visualShadow;
+
+	private Coords _posSaved = new Coords();
+
+	public VisualJump2D(Visual visualJumper, Visual visualShadow)
 	{
 		this.visualJumper = visualJumper;
 		this.visualShadow = visualShadow;
@@ -11,34 +22,35 @@ class VisualJump2D
 
 	// Cloneable.
 
-	clone()
+	public VisualJump2D clonify()
 	{
 		return new VisualJump2D
 		(
-			this.visualJumper.clone(), this.visualShadow.clone()
+			this.visualJumper.clonify(), this.visualShadow.clonify()
 		);
 	};
 
-	overwriteWith(other)
+	public VisualJump2D overwriteWith(VisualJump2D other)
 	{
 		this.visualJumper.overwriteWith(other.visualJumper);
 		this.visualShadow.overwriteWith(other.visualShadow);
+		return this;
 	};
 
 	// Transformable.
 
-	transform(transformToApply)
+	public VisualJump2D transform(Transform transformToApply)
 	{
-		transformToApply.transform(this.visualJumper);
-		transformToApply.transform(this.visualShadow);
+		transformToApply.transform( (Transformable)(this.visualJumper) );
+		transformToApply.transform( (Transformable)(this.visualShadow) );
 		return this;
 	};
 
 	// Visual.
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var entityPos = entity.locatable.loc.pos;
+		var entityPos = entity.locatable().loc.pos;
 		var entityPosZ = entityPos.z;
 		var camera = world.placeCurrent.camera(); // hack
 		entityPosZ -= camera.focalLength;
@@ -56,4 +68,14 @@ class VisualJump2D
 			entityPos.overwriteWith(this._posSaved);
 		}
 	};
+
+	// Clonable.
+
+	public Visual overwriteWith(Visual other)
+	{
+		var otherAsVisualJump2D = (VisualJump2D)other;
+		this.visualJumper.overwriteWith(otherAsVisualJump2D.visualJumper);
+		this.visualShadow.overwriteWith(otherAsVisualJump2D.visualShadow);
+		return this;
+	}
 }

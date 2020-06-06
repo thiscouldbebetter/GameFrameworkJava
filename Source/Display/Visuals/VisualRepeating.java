@@ -1,7 +1,24 @@
+package Display.Visuals;
 
-class VisualRepeating
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class VisualRepeating implements Visual
 {
-	constructor(cellSize, viewSize, child)
+	private Coords cellSize;
+	private Coords viewSize;
+	private Visual child;
+
+	private Coords viewSizeInCells;
+
+	// Helper variables.
+	private Coords _cellPos = new Coords();
+	private Coords _drawOffset = new Coords();
+	private Coords _drawPosWrapped = new Coords();
+	private Coords _drawablePosToRestore = new Coords();
+
+	public VisualRepeating(Coords cellSize, Coords viewSize, Visual child)
 	{
 		this.cellSize = cellSize;
 		this.viewSize = viewSize;
@@ -12,20 +29,15 @@ class VisualRepeating
 			throw "Invalid argument: cellSize.z must not be 0.";
 		}
 
-		this.viewSizeInCells = this.viewSize.clone().divide
+		this.viewSizeInCells = this.viewSize.clonify().divide
 		(
 			this.cellSize
 		);
-
-		this._cellPos = new Coords();
-		this._drawOffset = new Coords();
-		this._drawPosWrapped = new Coords();
-		this._drawablePosToRestore = new Coords();
 	}
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
-		var drawPos = entity.locatable.loc.pos;
+		var drawPos = entity.locatable().loc.pos;
 
 		this._drawablePosToRestore.overwriteWith(drawPos);
 
@@ -61,5 +73,18 @@ class VisualRepeating
 		}
 
 		drawPos.overwriteWith(this._drawablePosToRestore);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
+
 }

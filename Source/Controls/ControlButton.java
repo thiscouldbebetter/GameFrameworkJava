@@ -1,18 +1,73 @@
+package Controls;
 
-class ControlButton
+import java.util.function.*;
+import Display.*;
+import Geometry.*;
+import Model.*;
+
+public class ControlButton implements Control
 {
-	constructor(name, pos, size, text, fontHeightInPixels, hasBorder, isEnabled, click, context, canBeHeldDown)
+	public String _name;
+	public Coords _pos;
+	public Coords _size;
+	public String text;
+	public double fontHeightInPixels;
+	public boolean hasBorder;
+	public DataBinding _isEnabled;
+	public Runnable click;
+	public boolean canBeHeldDown;
+
+	public boolean isHighlighted;
+	public String styleName;
+
+	private Location _drawLoc;
+	private Coords _sizeHalf;
+
+	public ControlButton
+	(
+		String name, Coords pos, Coords size, String text,
+		double fontHeightInPixels, boolean hasBorder, Runnable click
+	)
 	{
-		this.name = name;
-		this.pos = pos;
-		this.size = size;
+		this(name, pos, size, text, fontHeightInPixels, hasBorder, new DataBinding(true), click);
+	}
+
+	public ControlButton
+	(
+		String name, Coords pos, Coords size, String text,
+		double fontHeightInPixels, boolean hasBorder, boolean isEnabled,
+		Runnable click
+	)
+	{
+		this(name, pos, size, text, fontHeightInPixels, hasBorder, new DataBinding(isEnabled), click, false);
+	}
+
+	public ControlButton
+	(
+		String name, Coords pos, Coords size, String text,
+		double fontHeightInPixels, boolean hasBorder, DataBinding isEnabled,
+		Runnable click
+	)
+	{
+		this(name, pos, size, text, fontHeightInPixels, hasBorder, isEnabled, click, false);
+	}
+
+	public ControlButton
+	(
+		String name, Coords pos, Coords size, String text,
+		double fontHeightInPixels, boolean hasBorder, DataBinding isEnabled,
+		Runnable click, boolean canBeHeldDown
+	)
+	{
+		this._name = name;
+		this._pos = pos;
+		this._size = size;
 		this.text = text;
 		this.fontHeightInPixels = fontHeightInPixels;
 		this.hasBorder = hasBorder;
 		this._isEnabled = isEnabled;
 		this.click = click;
-		this.context = context;
-		this.canBeHeldDown = (canBeHeldDown == null ? false : canBeHeldDown);
+		this.canBeHeldDown = canBeHeldDown;
 
 		this.isHighlighted = false;
 
@@ -21,70 +76,99 @@ class ControlButton
 		this._sizeHalf = new Coords();
 	}
 
-	actionHandle(actionNameToHandle)
+	public boolean actionHandle(String actionNameToHandle, Universe universe)
 	{
-		if (actionNameToHandle == ControlActionNames.Instances().ControlConfirm)
+		if (actionNameToHandle == ControlActionNames.ControlConfirm)
 		{
-			this.click(this.context);
+			this.click.run();
 		}
 
 		return (this.canBeHeldDown == false); // wasActionHandled
-	};
+	}
 
-	isEnabled()
+	public boolean isEnabled()
 	{
-		return (this._isEnabled.get == null ? this._isEnabled : this._isEnabled.get() );
+		return (Boolean)(this._isEnabled.get());
 	};
 
 	// events
 
-	focusGain()
+	public void childFocus(Control child)
+	{}
+
+	public void focusGain()
 	{
 		this.isHighlighted = true;
 	};
 
-	focusLose()
+	public void focusLose()
 	{
 		this.isHighlighted = false;
 	};
 
-	mouseClick(clickPos)
+	public boolean mouseClick(Coords clickPos)
 	{
 		if (this.isEnabled())
 		{
-			this.click(this.context);
+			this.click.run();
 		}
 		return (this.canBeHeldDown == false); // wasClickHandled
-	};
+	}
 
-	mouseEnter()
+	public void mouseEnter()
 	{
 		this.isHighlighted = true;
-	};
+	}
 
-	mouseExit()
+	public void mouseExit()
 	{
 		this.isHighlighted = false;
-	};
+	}
 
-	scalePosAndSize(scaleFactor)
+	public boolean mouseMove(Coords clickPos)
+	{}
+
+	private Control _parent;
+
+	public Control parent()
 	{
-		this.pos.multiply(scaleFactor);
-		this.size.multiply(scaleFactor);
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Coords pos()
+	{
+		return this._pos;
+	}
+
+	public Control scalePosAndSize(Coords scaleFactor)
+	{
+		this._pos.multiply(scaleFactor);
+		this._size.multiply(scaleFactor);
 		this.fontHeightInPixels *= scaleFactor.y;
-	};
+		return this;
+	}
 
-	style(universe)
+	public Coords size()
 	{
-		return universe.controlBuilder.styles[this.styleName == null ? "Default" : this.styleName];
+		return this._size;
+	}
+
+	public ControlStyle style(Universe universe)
+	{
+		return universe.controlBuilder.stylesByName.get(this.styleName == null ? "Default" : this.styleName);
 	};
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
 		var drawPos = this._drawLoc.overwriteWith(drawLoc).pos;
-		drawPos.add(this.pos);
+		drawPos.add(this.pos());
 
 		var isEnabled = this.isEnabled();
 		var isHighlighted = this.isHighlighted && isEnabled;
@@ -97,13 +181,14 @@ class ControlButton
 		{
 			display.drawRectangle
 			(
-				drawPos, this.size,
+				drawPos, this.size(),
 				colorFill, colorBorder,
 				isHighlighted // areColorsReversed
 			);
 		}
 
-		drawPos.add(this._sizeHalf.overwriteWith(this.size).half());
+		var size = this.size();
+		drawPos.add(this._sizeHalf.overwriteWith(size).half());
 
 		var colorText = (isEnabled ? colorBorder : style.colorDisabled);
 
@@ -116,7 +201,11 @@ class ControlButton
 			colorFill,
 			isHighlighted,
 			true, // isCentered
-			this.size.x // widthMaxInPixels
+			size.x // widthMaxInPixels
 		);
-	};
+	}
+
+	// Namable.
+
+	public String name() { return this._name; }
 }

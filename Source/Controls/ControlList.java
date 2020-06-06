@@ -1,7 +1,70 @@
+package Controls;
 
-class ControlList
+import java.util.*;
+import java.util.function.*;
+import Display.*;
+import Geometry.*;
+import Model.*;
+import Utility.*;
+
+public class ControlList implements Control
 {
-	constructor(name, pos, size, items, bindingForItemText, fontHeightInPixels, bindingForItemSelected, bindingForItemValue, bindingForIsEnabled, confirm)
+	public String name;
+	public Coords pos;
+	public Coords size;
+	public DataBinding _items;
+	public DataBinding bindingForItemText;
+	public double fontHeightInPixels;
+	public DataBinding bindingForItemSelected;
+	public DataBinding bindingForItemValue;
+	public DataBinding<Object,Boolean> bindingForIsEnabled;
+	public Runnable confirm;
+
+	private double itemSpacing;
+	private boolean isHighlighted;
+	private ControlScrollbar scrollbar;
+
+	private Coords _drawPos;
+	private Location _drawLoc;
+	private Coords _mouseClickPos;
+
+	private String styleName;
+
+	public ControlList
+	(
+		String name, Coords pos, Coords size, DataBinding items,
+		DataBinding bindingForItemText, double fontHeightInPixels
+	)
+	{
+		this
+		(
+			name, pos, size, items, bindingForItemText, fontHeightInPixels,
+			null, null // todo
+		);
+	}
+
+	public ControlList
+	(
+		String name, Coords pos, Coords size, DataBinding items,
+		DataBinding bindingForItemText, double fontHeightInPixels,
+		DataBinding bindingForItemSelected, DataBinding bindingForItemValue
+	)
+	{
+		this
+		(
+			name, pos, size, items, bindingForItemText, fontHeightInPixels,
+			bindingForItemSelected, bindingForItemValue,
+			null, null
+		);
+	}
+
+	public ControlList
+	(
+		String name, Coords pos, Coords size, DataBinding items,
+		DataBinding bindingForItemText, double fontHeightInPixels,
+		DataBinding bindingForItemSelected, DataBinding bindingForItemValue,
+		DataBinding bindingForIsEnabled, Runnable confirm
+	)
 	{
 		this.name = name;
 		this.pos = pos;
@@ -25,8 +88,7 @@ class ControlList
 			new Coords(scrollbarWidth, this.size.y), // size
 			this.fontHeightInPixels,
 			this.itemSpacing, // itemHeight
-			this._items,
-			0 // value
+			this._items
 		);
 
 		// Helper variables.
@@ -35,7 +97,7 @@ class ControlList
 		this._mouseClickPos = new Coords();
 	}
 
-	static fromPosSizeAndItems(pos, size, items)
+	public static ControlList fromPosSizeAndItems(Coords pos, Coords size, DataBinding items)
 	{
 		var returnValue = new ControlList
 		(
@@ -43,17 +105,21 @@ class ControlList
 			pos,
 			size,
 			items,
-			new DataBinding(), // bindingForItemText,
+			new DataBinding(null), // bindingForItemText,
 			10, // fontHeightInPixels,
 			null, // bindingForItemSelected,
 			null, // bindingForItemValue,
-			true // bindingForIsEnabled
+			new DataBinding(true), // bindingForIsEnabled
+			0 // todo
 		);
 
 		return returnValue;
-	};
+	}
 
-	static fromPosSizeItemsAndBindingForItemText(pos, size, items, bindingForItemText)
+	public static ControlList fromPosSizeItemsAndBindingForItemText
+	(
+		Coords pos, Coords size, DataBinding items, DataBinding bindingForItemText
+	)
 	{
 		var returnValue = new ControlList
 		(
@@ -65,115 +131,118 @@ class ControlList
 			10, // fontHeightInPixels,
 			null, // bindingForItemSelected,
 			null, // bindingForItemValue,
-			true // bindingForIsEnabled
+			new DataBinding(true) // bindingForIsEnabled
 		);
 
 		return returnValue;
-	};
+	}
 
-	actionHandle(actionNameToHandle)
+	public boolean actionHandle(String actionNameToHandle, Universe universe)
 	{
 		var wasActionHandled = false;
-		var controlActionNames = ControlActionNames.Instances();
-		if (actionNameToHandle == controlActionNames.ControlIncrement)
+		if (actionNameToHandle == ControlActionNames.ControlIncrement)
 		{
 			this.itemSelectedNextInDirection(1);
 			wasActionHandled = true;
 		}
-		else if (actionNameToHandle == controlActionNames.ControlDecrement)
+		else if (actionNameToHandle == ControlActionNames.ControlDecrement)
 		{
 			this.itemSelectedNextInDirection(-1);
 			wasActionHandled = true;
 		}
-		else if (actionNameToHandle == controlActionNames.ControlConfirm)
+		else if (actionNameToHandle == ControlActionNames.ControlConfirm)
 		{
 			if (this.confirm != null)
 			{
-				this.confirm();
+				this.confirm.run();
 				wasActionHandled = true;
 			}
 		}
 		return wasActionHandled;
-	};
+	}
 
-	focusGain()
+	public void childFocus(Control child)
+	{
+		// todo
+	}
+
+	public void focusGain()
 	{
 		this.isHighlighted = true;
-	};
+	}
 
-	focusLose()
+	public void focusLose()
 	{
 		this.isHighlighted = false;
-	};
+	}
 
-	indexOfFirstItemVisible()
+	public int indexOfFirstItemVisible()
 	{
 		return this.scrollbar.sliderPosInItems();
-	};
+	}
 
-	indexOfItemSelected(valueToSet)
+	public int indexOfItemSelected()
+	{
+		var items = this.items();
+		var itemSelected = this.itemSelected();
+		var returnValue = Arrays.asList(items).indexOf(itemSelected);
+		return returnValue;
+	}
+
+	public int indexOfItemSelected(int valueToSet)
 	{
 		var returnValue = valueToSet;
 		var items = this.items();
-		if (valueToSet == null)
-		{
-			returnValue = items.indexOf(this.itemSelected());
-			if (returnValue == -1)
-			{
-				returnValue = null;
-			}
-		}
-		else
-		{
-			var itemToSelect = items[valueToSet];
-			this.itemSelected(itemToSelect);
-		}
+		var itemToSelect = items[valueToSet];
+		this.itemSelected(itemToSelect);
 		return returnValue;
-	};
+	}
 
-	indexOfLastItemVisible()
+	public int indexOfLastItemVisible()
 	{
-		return this.indexOfFirstItemVisible() + Math.floor(this.scrollbar.windowSizeInItems) - 1;
-	};
+		return (int)(this.indexOfFirstItemVisible() + Math.floor(this.scrollbar.windowSizeInItems) - 1);
+	}
 
-	isEnabled()
+	public boolean isEnabled()
 	{
 		return (this.bindingForIsEnabled == null ? true : this.bindingForIsEnabled.get());
-	};
+	}
 
-	itemSelected(itemToSet)
+	public Object itemSelected()
 	{
-		var returnValue = itemToSet;
+		Object returnValue;
 
-		if (itemToSet == null)
+		if (this.bindingForItemSelected == null)
 		{
-			if (this._bindingForItemSelected == null)
-			{
-				returnValue = this._itemSelected;
-			}
-			else
-			{
-				returnValue = (this.bindingForItemSelected.get == null ? this._itemSelected : this.bindingForItemSelected.get() );
-			}
+			returnValue = this._itemSelected;
 		}
 		else
 		{
-			this._itemSelected = itemToSet;
-
-			if (this.bindingForItemSelected != null)
-			{
-				var valueToSet = this.bindingForItemValue.contextSet
-				(
-					this._itemSelected
-				).get();
-				this.bindingForItemSelected.set(valueToSet);
-			}
+			returnValue = this.bindingForItemSelected.get();
 		}
 
 		return returnValue;
-	};
+	}
 
-	itemSelectedNextInDirection(direction)
+	private Object _itemSelected;
+
+	public Object itemSelected(Object itemToSet)
+	{
+		this._itemSelected = itemToSet;
+
+		if (this.bindingForItemSelected != null)
+		{
+			var valueToSet = this.bindingForItemValue.contextSet
+			(
+				this._itemSelected
+			).get();
+			this.bindingForItemSelected.set(valueToSet);
+		}
+
+		return itemToSet;
+	}
+
+	public Object itemSelectedNextInDirection(int direction)
 	{
 		var items = this.items();
 		var numberOfItems = items.length;
@@ -181,7 +250,7 @@ class ControlList
 		var itemSelected = this.itemSelected();
 		var indexOfItemSelected = this.indexOfItemSelected();
 
-		if (indexOfItemSelected == null)
+		if (indexOfItemSelected < 0)
 		{
 			if (numberOfItems > 0)
 			{
@@ -197,16 +266,16 @@ class ControlList
 		}
 		else
 		{
-			indexOfItemSelected =
+			indexOfItemSelected = NumberHelper.trimToRangeMinMax
 			(
-				indexOfItemSelected + direction
-			).trimToRangeMinMax(0, numberOfItems - 1);
+				indexOfItemSelected + direction, 0, numberOfItems - 1
+			);
 		}
 
 		var itemToSelect = (indexOfItemSelected == null ? null : items[indexOfItemSelected]);
 		this.itemSelected(itemToSelect);
 
-		var indexOfFirstItemVisible = this.indexOfFirstItemVisible();
+		indexOfFirstItemVisible = this.indexOfFirstItemVisible();
 		var indexOfLastItemVisible = this.indexOfLastItemVisible();
 
 		var indexOfItemSelected = this.indexOfItemSelected();
@@ -221,14 +290,14 @@ class ControlList
 
 		var returnValue = this.itemSelected();
 		return returnValue;
-	};
+	}
 
-	items()
+	public Object[] items()
 	{
-		return (this._items.get == null ? this._items : this._items.get());
-	};
+		return (Object[])( this._items.get() );
+	}
 
-	mouseClick(clickPos)
+	public boolean mouseClick(Coords clickPos)
 	{
 		clickPos = this._mouseClickPos.overwriteWith(clickPos);
 
@@ -258,13 +327,11 @@ class ControlList
 		else
 		{
 			var offsetOfItemClicked = clickPos.y - this.pos.y;
-			var indexOfItemClicked =
+			var indexOfItemClicked = (int)
+			(
 				this.indexOfFirstItemVisible()
-				+ Math.floor
-				(
-					offsetOfItemClicked
-					/ this.itemSpacing
-				);
+				+ Math.floor(offsetOfItemClicked / this.itemSpacing)
+			);
 
 			var items = this.items();
 			if (indexOfItemClicked < items.length)
@@ -274,25 +341,46 @@ class ControlList
 		}
 
 		return true; // wasActionHandled
-	};
+	}
 
-	scalePosAndSize(scaleFactor)
+	public void mouseEnter() {}
+	public void mouseExit() {}
+
+	public boolean mouseMove(Coords mousePos)
+	{
+		return true;
+	}
+
+	private Control _parent;
+
+	public Control parent()
+	{
+		return this._parent;
+	}
+
+	public void parent(Control value)
+	{
+		this._parent = value;
+	}
+
+	public Control scalePosAndSize(Coords scaleFactor)
 	{
 		this.pos.multiply(scaleFactor);
 		this.size.multiply(scaleFactor);
 		this.fontHeightInPixels *= scaleFactor.y;
 		this.itemSpacing *= scaleFactor.y;
 		this.scrollbar.scalePosAndSize(scaleFactor);
-	};
+		return this;
+	}
 
-	style(universe)
+	public ControlStyle style(Universe universe)
 	{
-		return universe.controlBuilder.styles[this.styleName == null ? "Default" : this.styleName];
-	};
+		return universe.controlBuilder.stylesByName.get(this.styleName == null ? "Default" : this.styleName);
+	}
 
 	// drawable
 
-	draw(universe, display, drawLoc)
+	public void draw(Universe universe, Display display, Location drawLoc)
 	{
 		drawLoc = this._drawLoc.overwriteWith(drawLoc);
 		var drawPos = this._drawPos.overwriteWith(drawLoc.pos).add(this.pos);
@@ -339,26 +427,16 @@ class ControlList
 			{
 				display.drawRectangle
 				(
-					// pos
-					new Coords
-					(
-						drawPos.x,
-						itemPosY
-					),
-					// size
-					new Coords
-					(
-						this.size.x,
-						itemSizeY
-					),
+					new Coords(drawPos.x, itemPosY), // pos
+					new Coords(this.size.x,itemSizeY), // size
 					colorFore // colorFill
 				);
 			}
 
-			var text = this.bindingForItemText.contextSet
+			var text = (String)
 			(
-				item
-			).get();
+				this.bindingForItemText.contextSet(item).get()
+			);
 
 			var drawPos2 = new Coords(drawPos.x + textMarginLeft, itemPosY);
 
@@ -378,5 +456,5 @@ class ControlList
 		}
 
 		this.scrollbar.draw(universe, display, drawLoc);
-	};
+	}
 }

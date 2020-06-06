@@ -1,7 +1,11 @@
+package Display.Visuals;
 
-class VisualTransform
+public class VisualTransform implements Visual
 {
-	constructor(transformToApply, child)
+	private Transform transformToApply;
+	private Visual child;
+
+	public VisualTransform(Transform transformToApply, Visual child)
 	{
 		this.transformToApply = transformToApply;
 		this.child = child;
@@ -9,29 +13,41 @@ class VisualTransform
 
 	// Cloneable.
 
-	clone()
+	public VisualTransform clonify()
 	{
-		return new VisualTransform(this.transformToApply, this.child.clone());
-	};
+		return new VisualTransform(this.transformToApply, this.child.clonify());
+	}
 
-	overwriteWith(other)
+	public VisualTransform overwriteWith(VisualTransform other)
 	{
 		this.child.overwriteWith(other.child);
 		return this;
-	};
+	}
 
 	// Transformable.
 
-	transform(transformToApply)
+	public VisualTransform transform(Transform transformToApply)
 	{
 		return this.child.transform(transformToApply);
-	};
+	}
 
 	// Visual.
 
-	draw(universe, world, display, entity)
+	public void draw(Universe universe, World world, Display display, Entity entity)
 	{
 		this.child.transform(this.transformToApply);
 		this.child.draw(universe, world, display, entity);
-	};
+	}
+
+	// Clonable.
+
+	public Visual clonify()
+	{
+		return this; // todo
+	}
+
+	public Visual overwriteWith(Visual other)
+	{
+		return this; // todo
+	}
 }

@@ -1,76 +1,97 @@
+package Controls;
 
-class VenueControls
+import java.util.*;
+import Geometry.*;
+import Input.*;
+import Model.*;
+import Utility.*;
+
+public class VenueControls implements Venue
 {
-	constructor(controlRoot)
+	private Control controlRoot;
+
+	private ActionToInputsMapping[] actionToInputsMappings;
+	private HashMap<String,ActionToInputsMapping> actionToInputsMappingsByName;
+
+	// Helper variables.
+
+	private Location _drawLoc = new Location(new Coords());
+	private Coords _mouseClickPos = new Coords();
+	private Coords _mouseMovePos = new Coords();
+	private Coords _mouseMovePosPrev = new Coords();
+
+	public VenueControls(Control controlRoot)
 	{
 		this.controlRoot = controlRoot;
 
-		function buildGamepadInputs(numberOfGamepads, inputName)
-		{
-			var returnValues = [];
-
-			for (var i = 0; i < numberOfGamepads; i++)
-			{
-				var inputNameForGamepad = inputName + i;
-				returnValues.push(inputNameForGamepad);
-			}
-
-			return returnValues;
-		};
-
-		var controlActionNames = ControlActionNames.Instances();
-		var inputNames = Input.Names();
-
 		var inactivate = true;
-		this.actionToInputsMappings =
-		[
-			new ActionToInputsMapping(controlActionNames.ControlIncrement, 	[inputNames.ArrowDown].addMany(buildGamepadInputs(inputNames.MoveDown)), inactivate),
-			new ActionToInputsMapping(controlActionNames.ControlPrev, 		[inputNames.ArrowLeft].addMany(buildGamepadInputs(inputNames.MoveLeft)), inactivate),
-			new ActionToInputsMapping(controlActionNames.ControlNext, 		[inputNames.ArrowRight, inputNames.Tab].addMany(buildGamepadInputs(inputNames.MoveRight)), inactivate),
-			new ActionToInputsMapping(controlActionNames.ControlDecrement, 	[inputNames.ArrowUp].addMany(buildGamepadInputs(inputNames.MoveUp)), inactivate),
-			new ActionToInputsMapping(controlActionNames.ControlConfirm, 	[inputNames.Enter].addMany(buildGamepadInputs(inputNames.Button1)), inactivate),
-			new ActionToInputsMapping(controlActionNames.ControlCancel, 	[inputNames.Escape].addMany(buildGamepadInputs(inputNames.Button0)), inactivate)
-		];
+		var inputs = Input.Instances();
+		var gamepadCount = 2; // hack
+		this.actionToInputsMappings = new ActionToInputsMapping[]
+		{
+			new ActionToInputsMapping(ControlActionNames.ControlIncrement, 	new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.ArrowDown.name), buildGamepadInputs(gamepadCount, inputs.GamepadMoveDown.name))), inactivate),
+			new ActionToInputsMapping(ControlActionNames.ControlPrev, 		new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.ArrowLeft.name), buildGamepadInputs(gamepadCount, inputs.GamepadMoveLeft.name))), inactivate),
+			new ActionToInputsMapping(ControlActionNames.ControlNext, 		new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.ArrowRight.name, inputs.Tab.name), buildGamepadInputs(gamepadCount, inputs.GamepadMoveRight.name))), inactivate),
+			new ActionToInputsMapping(ControlActionNames.ControlDecrement, 	new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.ArrowUp.name), buildGamepadInputs(gamepadCount, inputs.GamepadMoveUp.name))), inactivate),
+			new ActionToInputsMapping(ControlActionNames.ControlConfirm, 	new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.Enter.name), buildGamepadInputs(gamepadCount, inputs.GamepadButton1.name))), inactivate),
+			new ActionToInputsMapping(ControlActionNames.ControlCancel, 	new ArrayList<String>(ArrayHelper.addAll(Arrays.asList(inputs.Escape.name), buildGamepadInputs(gamepadCount, inputs.GamepadButton0.name))), inactivate)
+		};
 
 		if (this.controlRoot.actionToInputsMappings != null)
 		{
 			this.actionToInputsMappings.addMany(this.controlRoot.actionToInputsMappings());
 		}
 
-		this.actionToInputsMappings.addLookupsMultiple(x => x.inputNames);
-
-		// Helper variables.
-
-		this._drawLoc = new Location(new Coords());
-		this._mouseClickPos = new Coords();
-		this._mouseMovePos = new Coords();
-		this._mouseMovePosPrev = new Coords();
+		this.actionToInputsMappingsByName = ArrayHelper.addLookupsMultiple
+		(
+			this.actionToInputsMappings,
+			(ActionToInputsMapping x) -> { return x.inputNames.toArray(new String[0]); } 
+		);
 	}
 
-	draw(universe)
+	public ArrayList<String> buildGamepadInputs(int numberOfGamepads, String inputName)
+	{
+		var returnValues = new ArrayList<String>();
+
+		for (var i = 0; i < numberOfGamepads; i++)
+		{
+			var inputNameForGamepad = inputName + i;
+			returnValues.add(inputNameForGamepad);
+		}
+
+		return returnValues;
+	}
+
+	public void draw(Universe universe)
 	{
 		var display = universe.display;
 		var drawLoc = this._drawLoc;
 		drawLoc.pos.clear();
 		this.controlRoot.draw(universe, display, drawLoc);
-	};
+	}
 
-	updateForTimerTick(universe)
+	public void finalize(Universe universe)
+	{}
+
+	public void initialize(Universe universe)
+	{}
+
+	public void updateForTimerTick(Universe universe)
 	{
 		this.draw(universe);
 
 		var inputHelper = universe.inputHelper;
 		var inputsPressed = inputHelper.inputsPressed;
-		var inputNames = Input.Names();
+		var inputs = Input.Instances();
 
-		for (var i = 0; i < inputsPressed.length; i++)
+		for (var i = 0; i < inputsPressed.size(); i++)
 		{
-			var inputPressed = inputsPressed[i];
-			if (inputPressed.isActive)
+			var inputPressed = inputsPressed.get(i);
+			if (inputPressed.isActive == true)
 			{
 				var inputPressedName = inputPressed.name;
 
-				var mapping = this.actionToInputsMappings[inputPressedName];
+				var mapping = this.actionToInputsMappingsByInputName.get(inputPressedName);
 
 				if (inputPressedName.startsWith("Mouse") == false)
 				{
@@ -93,7 +114,7 @@ class VenueControls
 						}
 					}
 				}
-				else if (inputPressedName == inputNames.MouseClick)
+				else if (inputPressedName == inputs.MouseClick.name)
 				{
 					this._mouseClickPos.overwriteWith
 					(
@@ -109,7 +130,7 @@ class VenueControls
 						inputPressed.isActive = false;
 					}
 				}
-				else if (inputPressedName == inputNames.MouseMove)
+				else if (inputPressedName == inputs.MouseMove.name)
 				{
 					this._mouseMovePos.overwriteWith
 					(
@@ -128,7 +149,7 @@ class VenueControls
 
 					this.controlRoot.mouseMove
 					(
-						this._mouseMovePos, this._mouseMovePosPrev
+						this._mouseMovePos //, this._mouseMovePosPrev
 					);
 				}
 
@@ -136,6 +157,6 @@ class VenueControls
 
 		} // end for
 
-	}; // end method
+	} // end method
 
 } // end class
