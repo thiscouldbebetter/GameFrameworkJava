@@ -1,7 +1,9 @@
-Game Framework
-==============
+GameFrameworkJava
+=================
 
-The JavaScript code in this repository implements a menu, profile, display, media, physics, model, and persistence framework around an rudimentary video game.  To see it in action, open the file GameFramework.html in a web browser that runs JavaScript.
+The Java code in this repository is planned to eventually implement a menu, profile, display, media, physics, model, and persistence framework around an rudimentary video game.
+
+It is a port of a JavaScript original available at https://github.com/thiscouldbebetter/GameFramework.
 
 Some homemade media files are included in the Content directory for testing purposes.
 
